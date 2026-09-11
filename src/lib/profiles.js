@@ -64,7 +64,47 @@ export const BASE_PROFILE = {
   // --- motion / cost ---------------------------------------------------
   motion: 0.5,
   quality: 1.0,
+
+  // --- overall strength -------------------------------------------------
+  /**
+   * Master gain on the optical effect. 1 = the profile as authored.
+   *
+   * It exists because the alternative - telling a caller to raise `ior`,
+   * `thickness`, `dispersion` and `frost` together - requires knowing how
+   * those interact, and getting the ratios wrong is what turns glass into
+   * plastic. Scaling them as a group preserves the material's identity:
+   * `water` at 2 is still unmistakably water, only stronger.
+   */
+  intensity: 1.0,
+  /** Extra gain on the corner rim light specifically. */
+  cornerLight: 1.0,
 };
+
+/**
+ * Apply `intensity` by scaling the parameters that carry optical strength.
+ *
+ * Only the four that read as "how much glass is this" are scaled. Shape
+ * (radius, bevel, surface) is identity, not strength - scaling it would
+ * change which profile you are looking at rather than how strong it is.
+ *
+ * IOR is scaled about 1.0 because that is air: an IOR of 1 bends nothing,
+ * so the strength of the refraction is the *excess* over 1, not the value
+ * itself. Doubling 1.48 naively would give 2.96, far past diamond.
+ *
+ * @param {object} params  a resolved parameter set
+ * @returns {object} the same shape, with strength terms scaled
+ */
+export function applyIntensity(params) {
+  const k = Math.max(params.intensity ?? 1, 0);
+  if (k === 1) return params;
+  return {
+    ...params,
+    ior: 1 + (params.ior - 1) * k,
+    thickness: params.thickness * k,
+    dispersion: params.dispersion * k,
+    frost: Math.min(params.frost * k, 1),
+  };
+}
 
 /**
  * The built-in profiles.

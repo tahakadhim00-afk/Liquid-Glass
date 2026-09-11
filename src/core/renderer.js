@@ -20,7 +20,7 @@ const UNIFORMS = [
   'uLight', 'uLightMode', 'uLightPos', 'uLightHeight', 'uLightColor',
   'uLightIntensity', 'uLightRange', 'uLightRadius', 'uLightWrap',
   'uLightAmbient',
-  'uSpecular', 'uTime', 'uMotion', 'uQuality',
+  'uSpecular', 'uCornerLight', 'uTime', 'uMotion', 'uQuality',
 ];
 
 function compile(gl, type, src) {
@@ -78,6 +78,7 @@ export const DEFAULTS = {
   lightWrap: 0.25,       // how far the lit band wraps past the terminator
   lightAmbient: 0.10,    // floor so the unlit border never goes black
   specular: 0.85,
+  cornerLight: 1.0,      // extra gain on the rounded corners, 1 = physical
   motion: 0.5,
   quality: 1.0,
 };
@@ -258,6 +259,7 @@ export class LiquidGlassRenderer {
     gl.uniform1f(this.loc.uLightWrap, o.lightWrap);
     gl.uniform1f(this.loc.uLightAmbient, o.lightAmbient);
     gl.uniform1f(this.loc.uSpecular, o.specular);
+    gl.uniform1f(this.loc.uCornerLight, o.cornerLight ?? 1.0);
     gl.uniform1f(this.loc.uTime, timeSeconds);
     gl.uniform1f(this.loc.uMotion, o.motion);
     gl.uniform1f(this.loc.uQuality, o.quality);

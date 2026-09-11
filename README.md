@@ -59,6 +59,46 @@ registerProfile('brand', {
 });
 ```
 
+### Turning a profile up or down
+
+`intensity` is a master gain on the optical effect. It scales `ior`,
+`thickness`, `dispersion` and `frost` together, so the material keeps its
+identity — `water` at 2 is still unmistakably water, just stronger.
+
+```js
+new LiquidGlass(el, { profile: 'water', intensity: 2 });    // double
+new LiquidGlass(el, { profile: 'crystal', intensity: 0.5 }); // half
+glass.set('intensity', 1.4);                                 // at runtime
+```
+
+| Value | Effect |
+|---|---|
+| `0` | Plain air. No refraction at all. |
+| `0.5` | Half strength — restrained, good for dense UI. |
+| `1` | The profile exactly as authored (default). |
+| `2`+ | Exaggerated. Useful for hero panels. |
+
+Reach for `intensity` before tuning `ior`/`thickness`/`dispersion` by hand:
+those four interact, and raising one without the others is what makes glass
+read as plastic. IOR is scaled about `1.0` (air), not about zero, because
+the strength of a refraction is its *excess* over air.
+
+It works on every tier, including the CSS fallbacks.
+
+### Corner light
+
+`cornerLight` adds gain to the rim light on the rounded corners only. A real
+bevel curves in two directions where it turns a corner, so it gathers light
+from a wider arc and reads brighter than the straight edges do.
+
+```js
+new LiquidGlass(el, { profile: 'apple', cornerLight: 2.5 });
+```
+
+`1` is physically neutral; higher exaggerates the corner glint the way
+product renders do. Straight edges are left untouched at any value. WebGL
+tier only — it needs per-pixel lighting.
+
 ---
 
 ## Guidelines

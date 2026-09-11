@@ -71,6 +71,11 @@ uniform float uLightWrap;
 // Ambient floor so the unlit side of the border never goes fully black.
 uniform float uLightAmbient;
 uniform float uSpecular;       // specular intensity
+// Extra gain on the rounded corners specifically. A real bevel wraps in two
+// directions at once where it turns a corner, so it gathers light from a
+// wider arc than the straight edges do and reads brighter. 1 = physical,
+// >1 exaggerates it the way product renders do.
+uniform float uCornerLight;
 uniform float uTime;
 uniform float uMotion;         // 0..1 idle liquid wobble
 uniform float uQuality;        // <0.5 -> 5x5 blur kernel, else 7x7
@@ -457,6 +462,33 @@ void main() {
   // through etched glass stays red.
   col = saturate3(col, uSaturation);
 
+  /* --- corner weight -------------------------------------------------
+     How much of the rounded corner this pixel sits on, 0 along a straight
+     edge and 1 at the middle of an arc.
+
+     The rounded-rect SDF is built from a box inset by `radius`: outside
+     that inner box the distance is measured radially from a corner point,
+     inside it the nearest edge is a flat side. So `max(q,0)` - the
+     overshoot past the inset box - is nonzero on exactly the two axes that
+     are curving, and its two components being *simultaneously* nonzero is
+     precisely the definition of being on a corner arc. Their geometric
+     mean, normalised by the radius, rises from 0 at the tangent point
+     where the arc meets the straight edge to 1 at 45 degrees.
+
+     Deriving it from the SDF rather than from the pixel's angle is what
+     keeps it correct on non-square panels, where the corner occupies a
+     different share of the contour on each side. */
+  vec2 cq = max(abs(local) - (half_ - radius), 0.0);
+  float corner = radius > 0.5
+    ? clamp(sqrt(cq.x * cq.y) / (radius * 0.5), 0.0, 1.0)
+    : 0.0;
+
+  // A corner curves in two directions at once, so it gathers light from a
+  // wider arc than a straight edge and genuinely reads brighter. Squaring
+  // concentrates the boost into the arc itself instead of bleeding it down
+  // the sides, which is what would make the whole rim look uniformly hot.
+  float cornerGain = 1.0 + (uCornerLight - 1.0) * corner * corner;
+
   /* ---- 7. Fresnel + specular --------------------------------------- */
   // Schlick: glass reflects ~4% head-on, ~100% at grazing angles.
   float cosTheta = clamp(dot(N, -I), 0.0, 1.0);
@@ -516,7 +548,7 @@ void main() {
   // Confine both to the bevel. On the flat top the normal is constant, so
   // an unconfined highlight would flood the entire face.
   float bevelMask = smoothstep(1.0, 0.35, t);
-  float specGain = uSpecular * uLightIntensity * attenuation;
+  float specGain = uSpecular * uLightIntensity * attenuation * cornerGain;
   col += (spec * 1.1 + sheen) * specGain * bevelMask * uLightColor;
 
   /* ---- 8. tint + edge highlight ------------------------------------ */
@@ -556,7 +588,7 @@ void main() {
   float ambient = clamp(uLightAmbient, 0.0, 1.0);
   float borderLight = (ambient + (1.0 - ambient) * lit) * attenuation;
 
-  col += rim * borderLight * 0.34 * uSpecular * uLightIntensity * uLightColor;
+  col += rim * borderLight * cornerGain * 0.34 * uSpecular * uLightIntensity * uLightColor;
   col *= 1.0 - rim * dark * 0.16 * (1.0 - ambient);
 
   // Thin dark contact line just inside the edge reads as glass thickness.

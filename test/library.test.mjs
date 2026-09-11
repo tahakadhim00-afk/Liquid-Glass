@@ -88,6 +88,46 @@ check('registerProfile inherits its parent',
   profiles.brandIor === 1.61 && profiles.brandFrost === profiles.baseFrost,
   `ior=${profiles.brandIor} frost=${profiles.brandFrost}`);
 
+/* --- 2b. intensity ---------------------------------------------------
+   The master gain must scale the strength terms as a group while leaving
+   the profile's identity - its shape - alone, or it would be switching
+   materials rather than turning one up. */
+const intensity = await page.evaluate(() => {
+  const { applyIntensity, resolveProfile } = window.__lg;
+  const base = resolveProfile('apple');
+  const up = applyIntensity({ ...base, intensity: 2 });
+  const down = applyIntensity({ ...base, intensity: 0 });
+  return {
+    // IOR scales about air (1.0), not about zero.
+    iorUp: up.ior, baseIor: base.ior,
+    thicknessUp: up.thickness, baseThickness: base.thickness,
+    // Shape must be untouched.
+    radiusUp: up.radius, baseRadius: base.radius,
+    bevelUp: up.bevel, baseBevel: base.bevel,
+    // 0 means "no glass": IOR back to air, no displacement.
+    iorZero: down.ior, thicknessZero: down.thickness,
+    // Frost is a 0..1 ratio and must not overflow it.
+    frostClamped: applyIntensity({ ...base, intensity: 99 }).frost,
+    // Identity at 1.
+    identity: applyIntensity({ ...base, intensity: 1 }).ior === base.ior,
+  };
+});
+check('intensity scales IOR about air',
+  Math.abs(intensity.iorUp - (1 + (intensity.baseIor - 1) * 2)) < 1e-9,
+  `ior=${intensity.iorUp}`);
+check('intensity scales displacement',
+  intensity.thicknessUp === intensity.baseThickness * 2,
+  `thickness=${intensity.thicknessUp}`);
+check('intensity leaves shape alone',
+  intensity.radiusUp === intensity.baseRadius && intensity.bevelUp === intensity.baseBevel,
+  `radius=${intensity.radiusUp} bevel=${intensity.bevelUp}`);
+check('intensity 0 is plain air',
+  intensity.iorZero === 1 && intensity.thicknessZero === 0,
+  `ior=${intensity.iorZero} thickness=${intensity.thicknessZero}`);
+check('frost stays within 0..1', intensity.frostClamped <= 1,
+  `frost=${intensity.frostClamped}`);
+check('intensity 1 is the identity', intensity.identity);
+
 /* --- 3. geometry adoption ------------------------------------------- */
 const geom = await page.evaluate(async () => {
   const { LiquidGlass } = window.__lg;

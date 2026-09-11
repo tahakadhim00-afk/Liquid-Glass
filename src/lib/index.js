@@ -16,6 +16,7 @@ export { LiquidGlass, applyLiquidGlass } from './glass-element.js';
 export {
   resolveProfile,
   registerProfile,
+  applyIntensity,
   profileNames,
   hasProfile,
   PROFILES,

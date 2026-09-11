@@ -120,5 +120,65 @@ const coolBias = cool[0] - cool[2];
 check('light colour tints the border', warmBias > coolBias + 5,
   `warm r-b ${warmBias.toFixed(1)} vs cool r-b ${coolBias.toFixed(1)}`);
 
+/* --- 4. corner light --------------------------------------------------
+   `cornerLight` must brighten the rounded corners and ONLY those. The
+   straight edges are the control: if they move too, the term is leaking
+   down the sides and the panel would read as uniformly hot rather than
+   catching light where the bevel actually turns. */
+const R = 60;
+await page.evaluate((R) => {
+  const p = window.__panel;
+  p.setOption('lightMode', 0);        // directional: no positional falloff
+  p.setOption('lightAmbient', 0.5);   // lift the whole rim so both probes read
+  p.setOption('lightIntensity', 2.0);
+  p.setOption('lightColor', [1, 1, 1]);
+  p.setOption('radius', R);
+}, R);
+await page.waitForTimeout(500);
+
+/** Mean luminance of a small box in a composited screenshot. */
+async function probe(boxes) {
+  const b64 = (await page.screenshot()).toString('base64');
+  return page.evaluate(async ({ b64, boxes }) => {
+    const img = new Image();
+    img.src = 'data:image/png;base64,' + b64;
+    await img.decode();
+    const c = document.createElement('canvas');
+    c.width = img.width; c.height = img.height;
+    const ctx = c.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(img, 0, 0);
+    const d = ctx.getImageData(0, 0, c.width, c.height).data;
+    return boxes.map(({ x, y, r }) => {
+      let sum = 0, n = 0;
+      for (let j = y - r; j <= y + r; j++) {
+        for (let i = x - r; i <= x + r; i++) {
+          const o = (j * c.width + i) * 4;
+          sum += 0.2126 * d[o] + 0.7152 * d[o + 1] + 0.0722 * d[o + 2];
+          n++;
+        }
+      }
+      return sum / n;
+    });
+  }, { b64, boxes });
+}
+
+// A point on the corner arc at 45 degrees, and the middle of the top edge,
+// both the same few px inside the contour so only the corner term differs.
+const k = R - R / Math.SQRT2;
+const cornerBox = { x: Math.round(rect.x + k + 4), y: Math.round(rect.y + k + 4), r: 3 };
+const edgeBox = { x: Math.round(rect.x + rect.width / 2), y: Math.round(rect.y + 5), r: 3 };
+
+await apply({ cornerLight: 1 });
+const [corner1, edge1] = await probe([cornerBox, edgeBox]);
+await apply({ cornerLight: 3 });
+const [corner3, edge3] = await probe([cornerBox, edgeBox]);
+
+console.log(`corner ${corner1.toFixed(1)} -> ${corner3.toFixed(1)}   `
+          + `edge ${edge1.toFixed(1)} -> ${edge3.toFixed(1)}`);
+check('cornerLight brightens the corners', corner3 > corner1 + 2,
+  `${corner1.toFixed(1)} -> ${corner3.toFixed(1)}`);
+check('cornerLight spares the straight edges', Math.abs(edge3 - edge1) < 2,
+  `${edge1.toFixed(1)} -> ${edge3.toFixed(1)}`);
+
 await browser.close();
 process.exit(failures ? 1 : 0);

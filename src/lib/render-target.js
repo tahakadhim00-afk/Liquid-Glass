@@ -21,6 +21,7 @@
 
 import { LiquidGlassRenderer } from '../core/renderer.js';
 import { buildDisplacementMap } from '../core/fallback.js';
+import { applyIntensity } from './profiles.js';
 
 /**
  * Map library parameters onto the shader's uniform names.
@@ -31,7 +32,7 @@ import { buildDisplacementMap } from '../core/fallback.js';
  * the rename is absorbed here rather than churning the shader.
  */
 function toRendererOptions(params) {
-  const { surface, ...rest } = params;
+  const { surface, ...rest } = applyIntensity(params);
   return { ...rest, profile: surface };
 }
 
@@ -191,7 +192,7 @@ class SVGTarget {
   }
 
   _build(geom) {
-    const p = this.params;
+    const p = applyIntensity(this.params);
     const dpr = Math.min(devicePixelRatio || 1, 2);
 
     const { url, scale } = buildDisplacementMap(
@@ -266,7 +267,7 @@ class BlurTarget {
   draw() { this._apply(); }
 
   _apply() {
-    const p = this.params;
+    const p = applyIntensity(this.params);
     // Same frost curve as the WebGL tier, halved: a pure blur with no
     // displacement reads as heavier at the same radius.
     const blur = (Math.pow(p.frost, 1.35) * 130 * 0.5).toFixed(1);

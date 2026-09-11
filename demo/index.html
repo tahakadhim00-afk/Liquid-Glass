@@ -175,7 +175,7 @@
     leave the screen park their render loop.</p>
 
   <script type="module">
-    import { LiquidGlass, registerProfile, resolveProfile, pickTier } from '../src/lib/index.js';
+    import { LiquidGlass, registerProfile, resolveProfile, applyIntensity, pickTier } from '../src/lib/index.js';
 
     // A brand profile: the same material, tinted. This is the common real
     // case - not a new optical model, just an existing one in your colour.
@@ -212,7 +212,7 @@
     // Expose the module so the test suite drives the SAME instance the page
     // loaded, instead of re-importing by a path that would have to escape
     // the dev server's root.
-    window.__lg = { LiquidGlass, registerProfile, resolveProfile, pickTier };
+    window.__lg = { LiquidGlass, registerProfile, resolveProfile, applyIntensity, pickTier };
   </script>
 </body>
 </html>

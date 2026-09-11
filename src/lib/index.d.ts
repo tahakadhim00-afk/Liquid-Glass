@@ -64,6 +64,16 @@ export interface GlassParams {
   motion: number;
   /** <0.5 uses a smaller blur kernel. */
   quality: number;
+
+  // --- overall strength -------------------------------------------------
+  /**
+   * Master gain on the optical effect: scales ior, thickness, dispersion
+   * and frost together, keeping the profile's material identity.
+   * 1 = as authored, 0.5 = half strength, 2 = double. Default 1.
+   */
+  intensity: number;
+  /** Extra gain on the rim light at the rounded corners. 1 = physical. */
+  cornerLight: number;
 }
 
 /** Built-in profile names. */
@@ -150,6 +160,13 @@ export declare function registerProfile(
 
 /** Resolve a profile name or inline definition to a full parameter set. */
 export declare function resolveProfile(profile?: ProfileRef): GlassParams;
+
+/**
+ * Scale a parameter set's optical strength by its own `intensity`.
+ * Applied internally by every tier; exported so a caller can preview the
+ * numbers a given intensity will actually produce.
+ */
+export declare function applyIntensity(params: GlassParams): GlassParams;
 
 /** Whether `name` names a known profile. */
 export declare function hasProfile(name: string): boolean;
