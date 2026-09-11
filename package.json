@@ -1,6 +1,6 @@
 {
   "name": "@taha_kadhim/liquid-glass",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "description": "Apple-style Liquid Glass for the web: real optical refraction via WebGL2, with SVG-displacement and CSS-blur fallbacks. Five optical profiles, a configurable light source, and a drop-in component API.",
   "keywords": [
