@@ -14,7 +14,7 @@ Drag the panel. Move the pointer to steer the light. Arrow keys nudge when focus
 ## Install
 
 ```bash
-npm install @tahakadhim00/liquid-glass
+npm install @taha_kadhim/liquid-glass
 ```
 
 ## Two ways to use it
@@ -22,7 +22,7 @@ npm install @tahakadhim00/liquid-glass
 **As a library**, attached to elements you already have:
 
 ```js
-import { LiquidGlass } from '@tahakadhim00/liquid-glass';
+import { LiquidGlass } from '@taha_kadhim/liquid-glass';
 
 new LiquidGlass(document.querySelector('.card'), { profile: 'apple' });
 ```

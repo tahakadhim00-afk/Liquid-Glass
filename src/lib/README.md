@@ -1,13 +1,13 @@
 # Liquid Glass - component API
 
 ```bash
-npm install @tahakadhim00/liquid-glass
+npm install @taha_kadhim/liquid-glass
 ```
 
 Attach the glass material to elements you already have.
 
 ```js
-import { LiquidGlass } from '@tahakadhim00/liquid-glass';
+import { LiquidGlass } from '@taha_kadhim/liquid-glass';
 
 new LiquidGlass(document.querySelector('.card'), { profile: 'apple' });
 ```
@@ -40,7 +40,7 @@ A brand usually wants an existing material in its own colour, not a new
 optical model, so profiles are extendable:
 
 ```js
-import { registerProfile } from '@tahakadhim00/liquid-glass';
+import { registerProfile } from '@taha_kadhim/liquid-glass';
 
 registerProfile('brand', {
   extends: 'apple',
