@@ -1,24 +1,64 @@
 {
-  "name": "liquid-glass",
+  "name": "@tahakadhim00/liquid-glass",
   "version": "0.1.0",
-  "private": true,
   "type": "module",
-  "description": "Apple-style Liquid Glass effect for the web: real refraction via WebGL2, with SVG-displacement and CSS-blur fallbacks.",
+  "description": "Apple-style Liquid Glass for the web: real optical refraction via WebGL2, with SVG-displacement and CSS-blur fallbacks. Five optical profiles, a configurable light source, and a drop-in component API.",
+  "keywords": [
+    "liquid-glass",
+    "glassmorphism",
+    "refraction",
+    "webgl",
+    "shader",
+    "backdrop-filter",
+    "glass",
+    "frosted-glass",
+    "apple",
+    "ui",
+    "effect",
+    "svg-filter"
+  ],
+  "license": "MIT",
+  "author": "tahakadhim00",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tahakadhim00-afk/Liquid-Glass.git"
+  },
+  "bugs": {
+    "url": "https://github.com/tahakadhim00-afk/Liquid-Glass/issues"
+  },
+  "homepage": "https://github.com/tahakadhim00-afk/Liquid-Glass#readme",
+  "sideEffects": false,
+  "main": "./dist-lib/liquid-glass.js",
+  "module": "./dist-lib/liquid-glass.js",
+  "types": "./dist-lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist-lib/index.d.ts",
+      "default": "./dist-lib/liquid-glass.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist-lib",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:lib": "vite build --config vite.lib.config.js && node scripts/copy-types.mjs",
     "preview": "vite preview",
-    "test": "node test/orientation.test.mjs && node test/lens.test.mjs && node test/light.test.mjs && node test/frost.test.mjs && node test/library.test.mjs"
+    "test": "node test/orientation.test.mjs && node test/lens.test.mjs && node test/light.test.mjs && node test/frost.test.mjs && node test/library.test.mjs",
+    "prepublishOnly": "npm run build:lib"
   },
   "devDependencies": {
     "playwright": "^1.63.0",
     "vite": "^5.4.11"
   },
-  "exports": {
-    ".": "./src/lib/index.js"
+  "publishConfig": {
+    "access": "public"
   },
-  "files": [
-    "src",
-    "README.md"
-  ]
+  "engines": {
+    "node": ">=18"
+  }
 }
