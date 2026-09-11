@@ -20,7 +20,8 @@ const UNIFORMS = [
   'uLight', 'uLightMode', 'uLightPos', 'uLightHeight', 'uLightColor',
   'uLightIntensity', 'uLightRange', 'uLightRadius', 'uLightWrap',
   'uLightAmbient',
-  'uSpecular', 'uCornerLight', 'uTime', 'uMotion', 'uQuality',
+  'uSpecular', 'uCornerLight', 'uRimWidth', 'uEdgeLine', 'uEdgeWidth',
+  'uTime', 'uMotion', 'uQuality',
 ];
 
 function compile(gl, type, src) {
@@ -79,6 +80,9 @@ export const DEFAULTS = {
   lightAmbient: 0.10,    // floor so the unlit border never goes black
   specular: 0.85,
   cornerLight: 1.0,      // extra gain on the rounded corners, 1 = physical
+  rimWidth: 0.55,        // border-light band, fraction of the bevel
+  edgeLine: 0.0,         // thin specular edge line strength, 0..1
+  edgeWidth: 1.5,        // its width in CSS px
   motion: 0.5,
   quality: 1.0,
 };
@@ -260,6 +264,9 @@ export class LiquidGlassRenderer {
     gl.uniform1f(this.loc.uLightAmbient, o.lightAmbient);
     gl.uniform1f(this.loc.uSpecular, o.specular);
     gl.uniform1f(this.loc.uCornerLight, o.cornerLight ?? 1.0);
+    gl.uniform1f(this.loc.uRimWidth, o.rimWidth ?? 0.55);
+    gl.uniform1f(this.loc.uEdgeLine, o.edgeLine ?? 0.0);
+    gl.uniform1f(this.loc.uEdgeWidth, (o.edgeWidth ?? 1.5) * dpr);
     gl.uniform1f(this.loc.uTime, timeSeconds);
     gl.uniform1f(this.loc.uMotion, o.motion);
     gl.uniform1f(this.loc.uQuality, o.quality);

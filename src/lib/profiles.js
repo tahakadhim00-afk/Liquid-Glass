@@ -78,6 +78,14 @@ export const BASE_PROFILE = {
   intensity: 1.0,
   /** Extra gain on the corner rim light specifically. */
   cornerLight: 1.0,
+
+  // --- edge treatment ---------------------------------------------------
+  /** Width of the soft border-light band, as a fraction of the bevel. */
+  rimWidth: 0.55,
+  /** Strength of the thin specular line at the very edge, 0..1. */
+  edgeLine: 0.0,
+  /** Width of that line in CSS px. ~1.5 matches a real device. */
+  edgeWidth: 1.5,
 };
 
 /**
@@ -114,20 +122,30 @@ export function applyIntensity(params) {
  */
 const BUILTIN = {
   /**
-   * Apple-ish - the iOS control layer.
+   * Apple-ish - the iOS 26 control layer ("regular" Liquid Glass).
    *
    * A thin sheet, not a blob: splay 0 keeps the face optically flat so
    * content behind it stays readable, and all the bending is gathered at
    * the rim. The lip surface (0.5) gives the raised edge over a shallow
-   * dish that reads as Apple's material rather than a dome. Dispersion is
-   * deliberately low - visible prismatic colour is the fastest way to stop
-   * looking like a system control.
+   * dish that reads as Apple's material rather than a dome.
+   *
+   * What separates it from generic glassmorphism (RESEARCH.md 17):
+   *  - a crisp ~1.5px specular line on the lit edge, faint on the far
+   *    side, rather than a wide soft glow (edgeLine / rimWidth)
+   *  - modest lensing: thickness 24 displaces the rim by ~8-12px on a
+   *    control-sized panel, not the 30-40px of a thick slab
+   *  - a real blur (~13px CSS) with saturation pushed hard, plus a light
+   *    white tint, so the face stays vivid instead of grey
+   *  - near-zero dispersion; visible prismatic colour is the fastest way
+   *    to stop looking like a system control
    */
   apple: {
     label: 'Apple-ish',
-    radius: 44, bevel: 34, bevelPower: 4.0, surface: 0.5, splay: 0.0,
-    ior: 1.48, dispersion: 0.022, thickness: 46, frost: 0.22,
-    saturation: 1.28, tint: 0.06, specular: 0.85, motion: 0.5,
+    radius: 44, bevel: 26, bevelPower: 4.0, surface: 0.5, splay: 0.0,
+    ior: 1.45, dispersion: 0.010, thickness: 24, frost: 0.30,
+    saturation: 1.65, tint: 0.12, specular: 0.70, motion: 0.35,
+    lightRadius: 0.35, lightWrap: 0.35, lightAmbient: 0.20,
+    rimWidth: 0.30, edgeLine: 1.0, edgeWidth: 1.5,
   },
 
   /**

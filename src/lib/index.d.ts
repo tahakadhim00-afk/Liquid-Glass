@@ -74,6 +74,14 @@ export interface GlassParams {
   intensity: number;
   /** Extra gain on the rim light at the rounded corners. 1 = physical. */
   cornerLight: number;
+
+  // --- edge treatment (WebGL tier only) ----------------------------------
+  /** Width of the soft border-light band as a fraction of the bevel. */
+  rimWidth: number;
+  /** Strength of the thin specular line at the very edge, 0..1. */
+  edgeLine: number;
+  /** Width of that line in CSS px. ~1.5 matches a real device. */
+  edgeWidth: number;
 }
 
 /** Built-in profile names. */

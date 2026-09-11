@@ -76,6 +76,15 @@ uniform float uSpecular;       // specular intensity
 // wider arc than the straight edges do and reads brighter. 1 = physical,
 // >1 exaggerates it the way product renders do.
 uniform float uCornerLight;
+// Width of the soft border-light band, as a fraction of the bevel. Apple's
+// material keeps this narrow; a wide band reads as a thick acrylic block.
+uniform float uRimWidth;
+// The thin specular line at the very edge - the single feature that most
+// makes a panel read as glass rather than tinted film. Strength 0..1 and
+// width in device px; px rather than bevel-relative because on a real
+// device the line is ~1.5pt no matter how large the control is.
+uniform float uEdgeLine;
+uniform float uEdgeWidth;
 uniform float uTime;
 uniform float uMotion;         // 0..1 idle liquid wobble
 uniform float uQuality;        // <0.5 -> 5x5 blur kernel, else 7x7
@@ -563,7 +572,7 @@ void main() {
      `grad` points outward from the shape, so it IS the border's own
      surface normal in-plane. Lambert against the light direction gives
      the gradient - continuous around the whole contour, no seams. */
-  float rim = smoothstep(0.55, 0.0, t);
+  float rim = smoothstep(clamp(uRimWidth, 0.05, 1.0), 0.0, t);
 
   float lightFacing = clamp(dot(grad, L.xy), -1.0, 1.0);
 
@@ -594,6 +603,28 @@ void main() {
   // Thin dark contact line just inside the edge reads as glass thickness.
   float contact = smoothstep(0.0, 1.0, t) * (1.0 - smoothstep(0.10, 0.30, t));
   col *= 1.0 - contact * 0.10;
+
+  /* --- specular edge line --------------------------------------------
+     A crisp ~1.5px line hugging the contour, bright on the side facing
+     the light and faint on the far side - the "inset 0 1.5px 0 white"
+     every CSS recreation of Apple's material reaches for. It is a MIX
+     toward the light colour, not an addition: a real edge highlight
+     saturates to white over any backdrop instead of blowing out.
+
+     Measured in px inside the contour rather than in bevel units, so it
+     stays a hairline as the bevel widens; the wobble is already in `d`,
+     so the line follows the liquid motion. */
+  // Starts half a pixel in so the line sits clear of the antialiased
+  // boundary; overlapping it there costs the line most of its brightness.
+  float edgePx = -d - 0.5;
+  float ew = max(uEdgeWidth, 0.5);
+  float edgeBand = smoothstep(0.0, ew * 0.6, edgePx)
+                 * (1.0 - smoothstep(ew, ew * 2.2, edgePx));
+  // The far side keeps a faint bounce (~1/6 of the lit line): the edge
+  // is still a discontinuity in the surface, so it never vanishes.
+  float edgeGlow = mix(0.16, 1.0, lit) * attenuation;
+  float edgeMix = clamp(edgeBand * edgeGlow * uEdgeLine * cornerGain * 0.85, 0.0, 1.0);
+  col = mix(col, uLightColor, edgeMix);
 
   fragColor = vec4(col, inside);
 }

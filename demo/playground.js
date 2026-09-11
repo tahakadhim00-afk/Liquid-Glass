@@ -1,10 +1,13 @@
 import { LiquidGlassPanel } from '../src/core/panel.js';
 
 const PRESETS = {
-  // Tuned to read like the iOS 26 control layer: thin, bright rim, low
-  // dispersion, frost strong enough to hide detail but not the colour.
-  apple:   { ior: 1.48, thickness: 46, bevel: 34, bevelPower: 4.0, profile: 0.5, dispersion: 0.022,
-             frost: 0.22, splay: 0.0, specular: 0.85, saturation: 1.28, tint: 0.06, radius: 44, motion: 0.5 },
+  // Tuned to read like the iOS 26 control layer: a crisp hairline on the
+  // lit edge, a narrow rim, modest lensing, a real blur with the colour
+  // pushed hard. See RESEARCH.md section 17.
+  apple:   { ior: 1.45, thickness: 24, bevel: 26, bevelPower: 4.0, profile: 0.5, dispersion: 0.010,
+             frost: 0.30, splay: 0.0, specular: 0.70, saturation: 1.65, tint: 0.12, radius: 44, motion: 0.35,
+             lightRadius: 0.35, lightWrap: 0.35, lightAmbient: 0.20,
+             rimWidth: 0.30, edgeLine: 1.0, edgeWidth: 1.5 },
   // Fat, round, low-power bevel = a dome. Heavy bend, near-clear surface.
   water:   { ior: 1.33, thickness: 86, bevel: 90, bevelPower: 1.8, profile: 0.0, dispersion: 0.012,
              frost: 0.05, splay: 0.55, specular: 1.20, saturation: 1.10, tint: 0.02, radius: 110, motion: 1.4 },

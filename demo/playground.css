@@ -51,6 +51,10 @@ html, body {
   cursor: grab;
   touch-action: none;
   will-change: transform;
+  /* Apple's material floats: a soft downward shadow separates it from the
+     page. Same values every CSS recreation of iOS 26 converges on. The
+     fallback tiers override this with their own combined stack. */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.32);
   outline: none;
   /* The WebGL layer paints the glass; this element is only the content
      and the pointer target, so it stays transparent in the WebGL tier. */

@@ -40,6 +40,7 @@ const WEBGL_ONLY = new Set([
   'lightMode', 'lightPos', 'lightHeight', 'lightColor', 'lightIntensity',
   'lightRange', 'lightRadius', 'lightWrap', 'lightAmbient',
   'specular', 'motion', 'splay', 'tint', 'tintColor', 'cornerLight',
+  'rimWidth', 'edgeLine', 'edgeWidth',
 ]);
 
 export class LiquidGlass {

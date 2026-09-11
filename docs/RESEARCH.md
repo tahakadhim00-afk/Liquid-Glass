@@ -648,3 +648,110 @@ Measured under SwiftShader (a CPU rasteriser, so a worst case): sustained
 throughput falls ~38% from frost 0 to frost 1. On a real GPU 49 texture
 fetches over a panel-sized area is routine, and the mip keeps that cost
 independent of blur radius. `uQuality < 0.5` drops to a 5x5 kernel.
+
+---
+
+## 17. The `apple` profile was a thick acrylic block, not a control layer
+
+Compared side by side with iOS 26 — and with the recipes every serious
+web recreation of it converges on — the `apple` preset read as a slab of
+frosted acrylic: a wide soft glow around the rim, the backdrop pinched
+30–40px at the edge, a dark contact outline, and a flat grey face. Four
+things were wrong, one of them structural.
+
+### 17.1 The signature feature was missing entirely
+
+What makes a panel read as *glass* rather than tinted film is a crisp
+~1.5px specular line along the edge that faces the light, with a faint
+bounce on the far side. Every CSS approximation reaches for the same
+numbers — `inset 0 1.5px 0 rgba(255,255,255,.85)` on top,
+`inset 0 -1px 0 rgba(255,255,255,.14)` below, a `1px rgba(255,255,255,.3)`
+border ([theplusaddons](https://theplusaddons.com/blog/liquid-glass-ui/),
+[html-in-canvas](https://html-in-canvas.dev/liquid-glass-effect/)) — and
+the [Godot recreation](https://godotshaders.com/shader/apple-blur-shader-recreation/)
+draws it as two thin `smoothstep` bands (`rb2`, `rb3`) rather than one
+wide glow.
+
+Our shader had no such term. The rim was a single band,
+`smoothstep(0.55, 0.0, t)`, covering more than half the bevel — on a
+34px bevel that is a ~19px soft wash. It is now a hairline:
+
+```glsl
+float edgePx = -d - 0.5;                    // px inside the contour
+float edgeBand = smoothstep(0.0, ew * 0.6, edgePx)
+               * (1.0 - smoothstep(ew, ew * 2.2, edgePx));
+float edgeGlow = mix(0.16, 1.0, lit) * attenuation;
+col = mix(col, uLightColor, edgeBand * edgeGlow * uEdgeLine * cornerGain * 0.85);
+```
+
+Three decisions in that:
+
+- **Measured in px, not bevel units.** On a device the line is ~1.5pt
+  whether the control is a 28pt button or a full-width toolbar. Tying it
+  to the bevel would thicken it on large panels.
+- **A `mix` toward the light colour, not an addition.** A real edge
+  highlight saturates to white over any backdrop; an additive term blows
+  out over light content.
+- **Starts half a pixel in.** Overlapping the antialiased boundary cost
+  the line most of its brightness at 1× DPR.
+
+The far side keeps 16% of the lit value — the 0.14/0.85 ratio of the CSS
+recipes — because the edge is still a discontinuity in the surface and
+never disappears.
+
+The wide band is kept, but its width is now a parameter (`rimWidth`,
+default 0.55 so `water`/`crystal` are unchanged) and `apple` sets it to
+0.30.
+
+### 17.2 Lensing was three times too strong
+
+`thickness 46` with `ior 1.48` displaced the backdrop 30–40px at the rim
+of a 400×220 panel. Apple's lensing on a control that size is visible but
+modest — content compresses into the edge without being dragged across
+it. `thickness 24, ior 1.45, bevel 26` lands at roughly 8–12px, which is
+also where the panel stops looking like a fun-house mirror when text
+passes under it (the complaint the [Six Colors review](https://sixcolors.com/post/2025/09/ios-26-review-through-a-glass-liquidly/)
+records about the real thing).
+
+### 17.3 The face was grey
+
+The blur was in range (frost 0.22 ≈ 8px CSS blur) but the face read as
+a grey veil, because the saturation boost (1.28) was too timid to offset
+the Fresnel mix and the white tint. The recipes are consistent:
+`saturate(160–170%)` over a `12–18px` blur with a `~13%` white lift. So:
+`saturation 1.65, frost 0.30 (≈13px CSS), tint 0.12`. Frost and CSS blur
+are related by `blur(σ) ≈ frost radius / 2`, since the shader treats its
+radius as a 2σ extent.
+
+### 17.4 Dispersion
+
+Apple's controls show essentially no prismatic fringe. `0.022 → 0.010`.
+It is not zero: the SVG tier derives its per-channel scales from it, and
+a hair of it keeps the edge from reading as a flat cut-out.
+
+### 17.5 Shadow
+
+The material floats, and the separation is a soft downward shadow —
+`0 10px 30px rgba(0,0,0,.32)` in every recipe. The library component
+deliberately does not own host styling (README, "Style the element, not
+the material"), so that stays the caller's `box-shadow`; the playground's
+hit element now carries it for the WebGL tier.
+
+### 17.6 Not done
+
+- **Adaptive light/dark.** Apple flips the glass darker over light
+  content, driven by backdrop luminance and even scroll speed. That is a
+  sampled-mip decision the shader could make; it is the largest remaining
+  gap and is tracked in §13.
+- **The refraction sign.** `N.xy` is built inward, so the rim samples
+  content from *outside* the shape (edge compression) rather than
+  magnifying the interior. That matches what the rim of an iOS control
+  looks like, and every optics test asserts against it, so it was left
+  alone — but it is worth knowing that the Blinn-Phong glint and the
+  Lambert rim band therefore favour opposite edges in directional mode.
+
+### 17.7 Verified
+
+Full suite passes unchanged. The light tests exercise the new hairline
+directly (they probe 4px inside the edge, on the `apple` preset), and the
+corner tests confirm `cornerLight` still multiplies through it.

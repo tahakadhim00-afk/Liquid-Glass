@@ -36,7 +36,7 @@ Five built-in optical profiles. Each is a physical material, not a theme.
 
 | Profile | Character | Key parameters |
 |---|---|---|
-| `apple` | Thin control-layer sheet. Flat centre, bending gathered at the rim. | `splay 0`, `surface 0.5` (lip), `ior 1.48` |
+| `apple` | iOS 26 control layer. Flat centre, modest lensing at a narrow rim, a crisp hairline on the lit edge, vivid blurred face. | `splay 0`, `surface 0.5` (lip), `thickness 24`, `edgeLine 1`, `saturation 1.65` |
 | `water` | Convex droplet. Wide soft bevel, clear, wobbles. | `surface 0` (convex), `ior 1.33`, `motion 1.4` |
 | `crystal` | Cut stone. Hard circular edge, prismatic fringes. | `ior 1.9`, `dispersion 0.075`, `bevelPower 2` |
 | `lens` | Figma-style. The whole face curves and magnifies. | `splay 0.85`, `frost 0` |
@@ -98,6 +98,24 @@ new LiquidGlass(el, { profile: 'apple', cornerLight: 2.5 });
 `1` is physically neutral; higher exaggerates the corner glint the way
 product renders do. Straight edges are left untouched at any value. WebGL
 tier only — it needs per-pixel lighting.
+
+### Edge treatment
+
+Three parameters shape how the edge itself is drawn, and they are what
+separate Apple's material from generic glassmorphism:
+
+| Parameter | What it does | `apple` |
+|---|---|---|
+| `edgeLine` | Strength of a thin specular line hugging the contour — bright on the side facing the light, faint on the far side. | `1` |
+| `edgeWidth` | Its width in CSS px. Stays a hairline no matter how large the element is. | `1.5` |
+| `rimWidth` | Width of the soft border-light band, as a fraction of the bevel. Narrow reads as glass; wide reads as an acrylic block. | `0.30` |
+
+```js
+new LiquidGlass(el, { profile: 'crystal', edgeLine: 0.6 }); // add the hairline to any profile
+```
+
+WebGL tier only. On the CSS tiers, `inset 0 1.5px 0 rgba(255,255,255,.85)`
+on the host is the equivalent.
 
 ---
 
