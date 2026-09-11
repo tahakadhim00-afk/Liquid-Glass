@@ -3,9 +3,9 @@
 [![npm](https://img.shields.io/npm/v/@taha_kadhim/liquid-glass)](https://www.npmjs.com/package/@taha_kadhim/liquid-glass)
 [![license](https://img.shields.io/npm/l/@taha_kadhim/liquid-glass)](LICENSE)
 
-Apple-style **Liquid Glass** for the web. Real optical refraction, five
-material profiles, and a drop-in component you attach to elements you
-already have.
+**Liquid Glass** for the web: a water-drop material with real optical
+refraction, every parameter overridable, and a drop-in component you
+attach to elements you already have.
 
 Not `backdrop-filter: blur()`. Blur *scatters* light; this *bends* it —
 straight lines behind the panel visibly kink at the rim, which is what
@@ -19,7 +19,8 @@ npm install @taha_kadhim/liquid-glass
 ```js
 import { LiquidGlass } from '@taha_kadhim/liquid-glass';
 
-new LiquidGlass(document.querySelector('.card'), { profile: 'apple' });
+new LiquidGlass(document.querySelector('.card'));                 // the water drop
+new LiquidGlass(document.querySelector('.hero'), { ior: 1.5, motion: 0 }); // tuned
 ```
 
 That is the whole integration. The library styles **only the material** —
@@ -30,52 +31,73 @@ handlers. Zero dependencies, ships with TypeScript types.
 
 ---
 
-## Profiles
+## The material
 
-Five built-in optical profiles. Each is a physical material, not a theme.
-
-| Profile | Character | Key parameters |
-|---|---|---|
-| `apple` | iOS 26 control layer. Flat centre, modest lensing at a narrow rim, a crisp hairline on the lit edge, vivid blurred face. | `splay 0`, `surface 0.5` (lip), `thickness 24`, `edgeLine 1`, `saturation 1.65` |
-| `water` | Convex droplet. Wide soft bevel, clear, wobbles. | `surface 0` (convex), `ior 1.33`, `motion 1.4` |
-| `crystal` | Cut stone. Hard circular edge, prismatic fringes. | `ior 1.9`, `dispersion 0.075`, `bevelPower 2` |
-| `lens` | Figma-style. The whole face curves and magnifies. | `splay 0.85`, `frost 0` |
-| `subtle` | Near-frosted, for dense UI. The A/B control. | `ior 1.18`, `frost 0.42` |
+One material: a **water drop**. It is the default, so the simplest call is
 
 ```js
-new LiquidGlass(el, { profile: 'crystal' });         // named
-new LiquidGlass(el, { profile: 'crystal', ior: 2 }); // named + override
+new LiquidGlass(el);
 ```
 
-A brand usually wants an existing material in its own colour, not a new
-optical model, so profiles are extendable:
+Its defaults, every one overridable:
+
+| Parameter | Default | What it is |
+|---|---|---|
+| `ior` | `1.33` | Index of refraction — water's real value |
+| `thickness` | `86` | Virtual slab thickness, px. Scales the displacement |
+| `bevel` | `90` | Width of the refracting rim, px |
+| `bevelPower` | `1.8` | Bevel sharpness: 2 = circle, 4 = squircle |
+| `surface` | `0` | Height profile: 0 convex dome, 0.5 lip, 1 concave |
+| `splay` | `0.55` | 0 = bevelled sheet (flat centre), 1 = thick lens |
+| `dispersion` | `0.012` | Chromatic fringing at the edges |
+| `frost` | `0.05` | Surface roughness: 0 polished, 1 etched |
+| `specular` | `1.20` | Highlight strength |
+| `saturation` | `1.10` | Backdrop saturation multiplier |
+| `tint` | `0.02` | Tint strength, toward `tintColor` (default white) |
+| `radius` | `110` | Corner radius, px — see note |
+| `motion` | `1.40` | Idle liquid wobble |
+
+```js
+new LiquidGlass(el, { ior: 1.5, motion: 0 });   // override at construction
+glass.set({ frost: 0.2, specular: 0.8 });       // or at runtime
+glass.set('thickness', 60);
+```
+
+**About `radius`:** the material adopts the element's own CSS
+`border-radius` whenever it has one, so the shape follows your stylesheet
+and the `110` default only applies to elements with no radius of their own.
+
+A named variant is a set of overrides you want to reuse:
 
 ```js
 import { registerProfile } from '@taha_kadhim/liquid-glass';
 
 registerProfile('brand', {
-  extends: 'apple',
+  extends: 'water',
   tintColor: [1.0, 0.86, 0.72],
+  tint: 0.10,
 });
+
+new LiquidGlass(el, { profile: 'brand' });
 ```
 
-### Turning a profile up or down
+### Turning it up or down
 
 `intensity` is a master gain on the optical effect. It scales `ior`,
 `thickness`, `dispersion` and `frost` together, so the material keeps its
-identity — `water` at 2 is still unmistakably water, just stronger.
+identity — the drop at 2 is still unmistakably water, just stronger.
 
 ```js
-new LiquidGlass(el, { profile: 'water', intensity: 2 });    // double
-new LiquidGlass(el, { profile: 'crystal', intensity: 0.5 }); // half
-glass.set('intensity', 1.4);                                 // at runtime
+new LiquidGlass(el, { intensity: 2 });     // double
+new LiquidGlass(el, { intensity: 0.5 });   // half
+glass.set('intensity', 1.4);               // at runtime
 ```
 
 | Value | Effect |
 |---|---|
 | `0` | Plain air. No refraction at all. |
 | `0.5` | Half strength — restrained, good for dense UI. |
-| `1` | The profile exactly as authored (default). |
+| `1` | The drop exactly as authored (default). |
 | `2`+ | Exaggerated. Useful for hero panels. |
 
 Reach for `intensity` before tuning `ior`/`thickness`/`dispersion` by hand:
@@ -92,7 +114,7 @@ bevel curves in two directions where it turns a corner, so it gathers light
 from a wider arc and reads brighter than the straight edges do.
 
 ```js
-new LiquidGlass(el, { profile: 'apple', cornerLight: 2.5 });
+new LiquidGlass(el, { cornerLight: 2.5 });
 ```
 
 `1` is physically neutral; higher exaggerates the corner glint the way
@@ -101,17 +123,18 @@ tier only — it needs per-pixel lighting.
 
 ### Edge treatment
 
-Three parameters shape how the edge itself is drawn, and they are what
-separate Apple's material from generic glassmorphism:
+Three parameters shape how the edge itself is drawn. The drop leaves the
+hairline off — a bead of water has no hard edge to catch one — but turning
+it on gives a harder, glassier rim:
 
-| Parameter | What it does | `apple` |
+| Parameter | What it does | Default |
 |---|---|---|
-| `edgeLine` | Strength of a thin specular line hugging the contour — bright on the side facing the light, faint on the far side. | `1` |
+| `edgeLine` | Strength of a thin specular line hugging the contour — bright on the side facing the light, faint on the far side. | `0` |
 | `edgeWidth` | Its width in CSS px. Stays a hairline no matter how large the element is. | `1.5` |
-| `rimWidth` | Width of the soft border-light band, as a fraction of the bevel. Narrow reads as glass; wide reads as an acrylic block. | `0.30` |
+| `rimWidth` | Width of the soft border-light band, as a fraction of the bevel. Narrow reads as glass; wide reads as an acrylic block. | `0.55` |
 
 ```js
-new LiquidGlass(el, { profile: 'crystal', edgeLine: 0.6 }); // add the hairline to any profile
+new LiquidGlass(el, { edgeLine: 0.8, rimWidth: 0.3 }); // a crisp, hard-edged drop
 ```
 
 WebGL tier only. On the CSS tiers, `inset 0 1.5px 0 rgba(255,255,255,.85)`
@@ -143,15 +166,15 @@ conforms to the shape you designed rather than imposing one.
 ```
 
 ```js
-new LiquidGlass(card, { profile: 'apple' });     /* material only */
+new LiquidGlass(card);                           /* material only */
 ```
 
 ### Keep text legible
 
-Glass is a background treatment; contrast is still your job. Prefer
-`apple` or `subtle` behind body copy — `crystal` and `water` displace
-enough to make small text swim. Raise `frost` to push the backdrop back,
-and remember `tint` only affects the WebGL tier.
+Glass is a background treatment; contrast is still your job. The drop's
+defaults displace enough to make small text swim, so behind body copy
+lower `thickness` (say 40) and `splay` (0–0.2), and raise `frost` to push
+the backdrop back. Remember `tint` only affects the WebGL tier.
 
 ### Understand which tier you get
 
@@ -173,10 +196,10 @@ over a source:
 
 ```js
 // Over page content — zero setup, SVG refraction on Chromium.
-new LiquidGlass(card, { profile: 'apple' });
+new LiquidGlass(card);
 
 // Over media you control — the full shader pipeline.
-new LiquidGlass(overlay, { profile: 'crystal', backdrop: videoEl });
+new LiquidGlass(overlay, { backdrop: videoEl });
 ```
 
 Parameters the active tier cannot honour (the light source, `splay`,
@@ -191,7 +214,7 @@ listeners, and restores the host exactly as it was.
 
 ```js
 useEffect(() => {
-  const glass = new LiquidGlass(ref.current, { profile: 'apple' });
+  const glass = new LiquidGlass(ref.current);
   return () => glass.destroy();
 }, []);
 ```

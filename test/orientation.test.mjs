@@ -10,6 +10,10 @@ const r = await page.evaluate(() => new Promise(res => {
   // Neutralise everything except the geometry mapping.
   p.setOption('frost',0); p.setOption('dispersion',0); p.setOption('specular',0);
   p.setOption('tint',0); p.setOption('saturation',1); p.setOption('motion',0);
+  // The playground opens on the water drop, whose whole face curves. The
+  // probes below need a bevelled sheet with a flat top, so set one.
+  p.setOption('splay',0); p.setOption('bevel',34); p.setOption('radius',44);
+  p.setOption('thickness',46); p.setOption('bevelPower',4); p.setOption('profile',0.5);
   p.rect.x=440; p.rect.y=290;
   const gl=p.renderer.gl, c=p.canvas;
   const orig=p.renderer.render.bind(p.renderer);

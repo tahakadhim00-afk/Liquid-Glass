@@ -35,6 +35,12 @@ const rect = await page.evaluate(() => {
   p.rect.x = 120; p.rect.y = 300; p.rect.width = 640; p.rect.height = 190;
   p.setOption('radius', 95);
   p.setOption('splay', 0);
+  // A flat-topped sheet, so the sampled centre block is optically flat:
+  // the water drop's 90px bevel would reach almost to the middle.
+  p.setOption('bevel', 34);
+  p.setOption('thickness', 46);
+  p.setOption('bevelPower', 4);
+  p.setOption('profile', 0.5);
   // Isolate the backdrop: no lighting, no tint, no dispersion.
   p.setOption('specular', 0);
   p.setOption('lightIntensity', 0);

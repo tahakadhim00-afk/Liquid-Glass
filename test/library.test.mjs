@@ -35,7 +35,7 @@ const check = (name, ok, detail = '') => {
 
 /* --- 1. non-intrusive attachment ------------------------------------ */
 const attach = await page.evaluate(() => {
-  const card = document.querySelector('[data-glass="apple"]');
+  const card = document.querySelector('[data-glass="water"]');
   const layer = card.querySelector('.lg-layer');
   return {
     contentIntact: ['tagline', 'H2', 'P'].every((n) =>
@@ -61,28 +61,28 @@ const profiles = await page.evaluate(() => {
   host.style.cssText = 'width:200px;height:120px;border-radius:18px';
   document.body.appendChild(host);
 
-  const g = new LiquidGlass(host, { profile: 'crystal', ior: 2.05 });
+  const g = new LiquidGlass(host, { ior: 2.05 });   // no profile: the drop
   const overridden = g.getParams().ior;
-  const inherited = g.getParams().dispersion;      // from crystal, untouched
-  g.setProfile('subtle');
-  const afterSwitch = g.getParams().ior;
+  const inherited = g.getParams().dispersion;      // from water, untouched
 
-  registerProfile('t-brand', { extends: 'apple', ior: 1.61 });
+  registerProfile('t-brand', { extends: 'water', ior: 1.61 });
   const brand = resolveProfile('t-brand');
+  g.setProfile('t-brand');
+  const afterSwitch = g.getParams().ior;
 
   g.destroy();
   host.remove();
   return {
     overridden, inherited, afterSwitch,
     brandIor: brand.ior, brandFrost: brand.frost,
-    baseFrost: resolveProfile('apple').frost,
+    baseFrost: resolveProfile('water').frost,
   };
 });
 check('per-instance override beats profile', profiles.overridden === 2.05,
   `ior=${profiles.overridden}`);
-check('unoverridden values come from the profile', profiles.inherited === 0.075,
+check('unoverridden values come from the profile', profiles.inherited === 0.012,
   `dispersion=${profiles.inherited}`);
-check('setProfile switches the material', profiles.afterSwitch === 1.18,
+check('setProfile switches the material', profiles.afterSwitch === 1.61,
   `ior=${profiles.afterSwitch}`);
 check('registerProfile inherits its parent',
   profiles.brandIor === 1.61 && profiles.brandFrost === profiles.baseFrost,
@@ -94,7 +94,7 @@ check('registerProfile inherits its parent',
    materials rather than turning one up. */
 const intensity = await page.evaluate(() => {
   const { applyIntensity, resolveProfile } = window.__lg;
-  const base = resolveProfile('apple');
+  const base = resolveProfile('water');
   const up = applyIntensity({ ...base, intensity: 2 });
   const down = applyIntensity({ ...base, intensity: 0 });
   return {
@@ -135,7 +135,7 @@ const geom = await page.evaluate(async () => {
   // A radius the profile does not specify, to prove the host wins.
   host.style.cssText = 'width:240px;height:140px;border-radius:31px';
   document.body.appendChild(host);
-  const g = new LiquidGlass(host, { profile: 'apple' });
+  const g = new LiquidGlass(host);
   const adopted = g.getParams().radius;
   // Resizing must be picked up without the caller doing anything.
   host.style.width = '400px';
@@ -157,7 +157,7 @@ const teardown = await page.evaluate(() => {
   document.body.appendChild(host);
 
   const svgBefore = document.querySelectorAll('svg[aria-hidden]').length;
-  const g = new LiquidGlass(host, { profile: 'apple' });
+  const g = new LiquidGlass(host);
   const during = {
     layers: host.querySelectorAll('.lg-layer').length,
     position: host.style.position,
@@ -193,7 +193,8 @@ const many = await page.evaluate(() => {
     filterCount: filters.length,
   };
 });
-check('many instances coexist', many.count >= 6, `count=${many.count}`);
+// Four variant cards plus the sticky bar.
+check('many instances coexist', many.count >= 5, `count=${many.count}`);
 check('filter ids do not collide', many.uniqueFilters, `n=${many.filterCount}`);
 
 /* --- 6. the effect is actually applied -------------------------------- */
@@ -201,7 +202,7 @@ check('filter ids do not collide', many.uniqueFilters, `n=${many.filterCount}`);
 // material off must change the pixels under a panel. If the library were
 // inert this is the test that would catch it.
 const box = await page.evaluate(() => {
-  const c = document.querySelector('[data-glass="crystal"]').getBoundingClientRect();
+  const c = document.querySelector('[data-glass="brand"]').getBoundingClientRect();
   return { x: Math.round(c.x), y: Math.round(c.y), width: Math.round(c.width), height: Math.round(c.height) };
 });
 const shotOn = await page.screenshot({ clip: box });

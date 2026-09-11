@@ -127,47 +127,38 @@
 <body>
   <header>
     <h1>Liquid Glass</h1>
-    <p class="lede">The same optical model as the shader demo, packaged as a component you
-      attach to elements you already have. These cards are plain CSS; only the material
-      comes from the library.</p>
+    <p class="lede">One material - a water drop - packaged as a component you attach to
+      elements you already have. Every card below is the same drop with different
+      overrides; the cards themselves are plain CSS.</p>
     <p class="tier" id="tier">detecting…</p>
   </header>
 
   <div class="bar" id="bar">
-    <strong>Profile</strong>
-    <button data-p="apple" aria-pressed="true">Apple-ish</button>
-    <button data-p="water">Water drop</button>
-    <button data-p="crystal">Crystal</button>
-    <button data-p="lens">Lens</button>
-    <button data-p="subtle">Subtle</button>
+    <strong>Variant</strong>
+    <button data-p="water" aria-pressed="true">Water drop</button>
+    <button data-p="brand">Brand tint</button>
+    <button data-p="thin">Thin</button>
+    <button data-p="still">Still</button>
   </div>
 
   <div class="bed" aria-hidden="true"></div>
 
   <div class="grid">
-    <div class="card" data-glass="apple">
-      <div class="tagline">apple</div><h2>Apple-ish</h2>
-      <p>Thin sheet. Flat centre, all the bending gathered at the rim.</p>
-    </div>
     <div class="card" data-glass="water">
-      <div class="tagline">water</div><h2>Water drop</h2>
-      <p>Convex dome, IOR 1.33, wide soft bevel. It wobbles.</p>
-    </div>
-    <div class="card" data-glass="crystal">
-      <div class="tagline">crystal</div><h2>Crystal</h2>
-      <p>IOR 1.9 with wide dispersion. Hard circular edge, prismatic fringes.</p>
-    </div>
-    <div class="card" data-glass="lens">
-      <div class="tagline">lens</div><h2>Lens</h2>
-      <p>The whole face curves, so content magnifies across the panel.</p>
-    </div>
-    <div class="card" data-glass="subtle">
-      <div class="tagline">subtle</div><h2>Subtle</h2>
-      <p>Near-frosted. The A/B control: the gap to Apple-ish is refraction.</p>
+      <div class="tagline">defaults</div><h2>Water drop</h2>
+      <p>Convex dome, IOR 1.33, wide soft bevel. It wobbles. <code>new LiquidGlass(el)</code>.</p>
     </div>
     <div class="card" data-glass="brand">
-      <div class="tagline">custom</div><h2>Registered profile</h2>
-      <p>Apple-ish extended with a warm tint, via registerProfile().</p>
+      <div class="tagline">registerProfile</div><h2>Brand tint</h2>
+      <p>The same drop with a warm tint and a warm light, via <code>registerProfile()</code>.</p>
+    </div>
+    <div class="card" data-glass="thin">
+      <div class="tagline">overrides</div><h2>Thin</h2>
+      <p>Thickness 40, bevel 40, splay 0.2 - a shallower bead with a flatter centre.</p>
+    </div>
+    <div class="card" data-glass="still">
+      <div class="tagline">overrides</div><h2>Still</h2>
+      <p>Motion 0, a hairline edge. The drop frozen into a solid glass button.</p>
     </div>
   </div>
 
@@ -177,13 +168,20 @@
   <script type="module">
     import { LiquidGlass, registerProfile, resolveProfile, applyIntensity, pickTier } from '../src/lib/index.js';
 
-    // A brand profile: the same material, tinted. This is the common real
-    // case - not a new optical model, just an existing one in your colour.
+    // Named variants: each is the water drop plus a handful of overrides.
     registerProfile('brand', {
-      extends: 'apple',
+      extends: 'water',
       tintColor: [1.0, 0.86, 0.72],
       tint: 0.10,
       lightColor: [1.0, 0.92, 0.82],
+    });
+    registerProfile('thin', {
+      extends: 'water',
+      thickness: 40, bevel: 40, splay: 0.2,
+    });
+    registerProfile('still', {
+      extends: 'water',
+      motion: 0, edgeLine: 0.8, rimWidth: 0.3,
     });
 
     const tier = pickTier();
@@ -195,9 +193,9 @@
     const instances = [...document.querySelectorAll('[data-glass]')]
       .map((el) => new LiquidGlass(el, { profile: el.dataset.glass }));
 
-    new LiquidGlass(document.getElementById('bar'), { profile: 'subtle' });
+    new LiquidGlass(document.getElementById('bar'), { motion: 0.3, thickness: 40 });
 
-    // Switching every panel at once, to compare profiles over identical
+    // Switching every panel at once, to compare variants over identical
     // content. setProfile keeps any per-instance overrides.
     document.getElementById('bar').addEventListener('click', (e) => {
       const btn = e.target.closest('button[data-p]');

@@ -25,6 +25,15 @@ const rect = await page.evaluate(() => {
   // Freeze everything that would otherwise perturb a brightness probe.
   p.setOption('followPointer', false);
   p.setOption('motion', 0);
+  // The playground opens on the water drop (a near-pill with a 90px
+  // bevel); the edge probes below assume a flat bevelled sheet with a
+  // modest corner, so set that geometry explicitly.
+  p.setOption('radius', 44);
+  p.setOption('bevel', 34);
+  p.setOption('bevelPower', 4);
+  p.setOption('profile', 0.5);
+  p.setOption('splay', 0);
+  p.setOption('thickness', 46);
   p.setOption('lightMode', 1);       // positional lamp
   p.setOption('lightRange', 0);      // no falloff yet: isolate direction
   p.setOption('lightAmbient', 0);

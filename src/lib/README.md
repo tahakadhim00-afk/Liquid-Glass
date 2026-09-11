@@ -9,7 +9,8 @@ Attach the glass material to elements you already have.
 ```js
 import { LiquidGlass } from '@taha_kadhim/liquid-glass';
 
-new LiquidGlass(document.querySelector('.card'), { profile: 'apple' });
+new LiquidGlass(document.querySelector('.card'));                  // the water drop
+new LiquidGlass(document.querySelector('.hero'), { ior: 1.5, motion: 0 });
 ```
 
 The library styles **only the material**. Your element keeps its own
@@ -17,68 +18,68 @@ layout, padding, radius, children and event handlers.
 
 ---
 
-## Profiles
+## The material
 
-Five built-in optical profiles. Each is a physical material, not a theme.
+One material: a **water drop**. It is the default. Every parameter below
+is a plain default you can override per instance or at runtime.
 
-| Profile | Character | Key parameters |
+| Parameter | Default | What it is |
 |---|---|---|
-| `apple` | Thin control-layer sheet. Flat centre, bending gathered at the rim. | `splay 0`, `surface 0.5` (lip), `ior 1.48` |
-| `water` | Convex droplet. Wide soft bevel, clear, wobbles. | `surface 0` (convex), `ior 1.33`, `motion 1.4` |
-| `crystal` | Cut stone. Hard circular edge, prismatic fringes. | `ior 1.9`, `dispersion 0.075`, `bevelPower 2` |
-| `lens` | Figma-style. The whole face curves and magnifies. | `splay 0.85`, `frost 0` |
-| `subtle` | Near-frosted, for dense UI. The A/B control. | `ior 1.18`, `frost 0.42` |
+| `ior` | `1.33` | Index of refraction |
+| `thickness` | `86` | Virtual slab thickness, px. Scales the displacement |
+| `bevel` | `90` | Width of the refracting rim, px |
+| `bevelPower` | `1.8` | Bevel sharpness: 2 = circle, 4 = squircle |
+| `surface` | `0` | Height profile: 0 convex, 0.5 lip, 1 concave |
+| `splay` | `0.55` | 0 = bevelled sheet, 1 = thick lens |
+| `dispersion` | `0.012` | Chromatic fringing |
+| `frost` | `0.05` | Surface roughness, 0..1 |
+| `specular` | `1.20` | Highlight strength |
+| `saturation` | `1.10` | Backdrop saturation multiplier |
+| `tint` | `0.02` | Tint strength toward `tintColor` (default white) |
+| `radius` | `110` | Corner radius, px. Adopted from the host's CSS when it has one |
+| `motion` | `1.40` | Idle liquid wobble |
 
 ```js
-new LiquidGlass(el, { profile: 'crystal' });        // named
-new LiquidGlass(el, { profile: 'crystal', ior: 2 }); // named + override
+new LiquidGlass(el, { thickness: 40, splay: 0.2 });  // at construction
+glass.set('ior', 1.6);                               // at runtime
+glass.set({ frost: 0.3, tint: 0.1 });
 ```
 
-### Custom profiles
+### Named variants
 
-A brand usually wants an existing material in its own colour, not a new
-optical model, so profiles are extendable:
+A variant is a set of overrides you want to reuse:
 
 ```js
 import { registerProfile } from '@taha_kadhim/liquid-glass';
 
 registerProfile('brand', {
-  extends: 'apple',
+  extends: 'water',
   tintColor: [1.0, 0.86, 0.72],
   lightColor: [1.0, 0.92, 0.82],
 });
 
 new LiquidGlass(el, { profile: 'brand' });
+glass.setProfile('brand');
 ```
 
-`resolveProfile(nameOrObject)` returns the full parameter set, so profiles
+`resolveProfile(nameOrObject)` returns the full parameter set, so variants
 can be inspected, diffed, or serialised into a design system.
 
----
+### More parameters
 
-## Parameters
+**Strength** - `intensity` scales `ior`, `thickness`, `dispersion` and
+`frost` together (1 = as authored, 2 = double). `cornerLight` adds gain to
+the rim light at the rounded corners.
 
-Anything below can be set per instance, or baked into a profile.
-
-**Shape** - `radius` (adopted from the host's CSS when it has one),
-`bevel`, `bevelPower` (2 = circular, hard edge; 4 = squircle, Apple),
-`surface` (0 convex / 0.5 lip / 1 concave), `splay` (0 sheet -> 1 lens).
-
-**Optics** - `ior`, `dispersion`, `thickness`, `frost`, `saturation`.
-
-**Surface** - `tint`, `tintColor`, `specular`.
+**Edge** - `edgeLine` (0..1) draws a thin specular line at the contour,
+`edgeWidth` sets its width in px, `rimWidth` sets the soft border band as
+a fraction of the bevel. The drop leaves the line off.
 
 **Light** - `lightMode` (0 directional / 1 positional), `lightPos`,
 `lightHeight`, `lightColor`, `lightIntensity`, `lightRange`,
 `lightRadius`, `lightWrap`, `lightAmbient`.
 
-**Motion** - `motion`, `quality`.
-
-```js
-glass.set('ior', 1.6);
-glass.set({ frost: 0.3, tint: 0.1 });
-glass.setProfile('lens');
-```
+**Cost** - `quality` (<0.5 uses a smaller blur kernel).
 
 ---
 
@@ -103,15 +104,15 @@ over a source:
 
 ```js
 // Over page content - zero setup, SVG refraction on Chromium.
-new LiquidGlass(card, { profile: 'apple' });
+new LiquidGlass(card);
 
 // Over media you control - full shader pipeline.
-new LiquidGlass(overlay, { profile: 'crystal', backdrop: videoEl });
+new LiquidGlass(overlay, { backdrop: videoEl });
 ```
 
 Parameters the active tier cannot honour (the light source, `splay`,
-`tint`) are stored but inert; the library logs once rather than failing
-silently, since on Safari those tiers are the norm.
+`tint`, the edge line) are stored but inert; the library logs once rather
+than failing silently, since on Safari those tiers are the norm.
 
 Force a tier for testing with `tier: 'svg' | 'blur' | 'webgl'`.
 
@@ -120,15 +121,15 @@ Force a tier for testing with `tier: 'svg' | 'blur' | 'webgl'`.
 ## Lifecycle
 
 ```js
-const glass = new LiquidGlass(el, { profile: 'apple' });
+const glass = new LiquidGlass(el, { motion: 0.5 });
 glass.set({ frost: 0.4 });
 glass.setBackdrop(video);   // enables/updates the WebGL source
 glass.getParams();
 glass.destroy();            // removes every layer, listener and GPU resource
 ```
 
-`applyLiquidGlass('.card', { profile: 'apple' })` attaches to a selector
-and returns the instances.
+`applyLiquidGlass('.card', { motion: 0 })` attaches to a selector and
+returns the instances.
 
 The component re-measures on resize, scroll and `ResizeObserver`, and an
 `IntersectionObserver` parks the render loop for offscreen panels so a

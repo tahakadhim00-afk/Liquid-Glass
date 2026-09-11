@@ -27,7 +27,7 @@ import { applyIntensity } from './profiles.js';
  * Map library parameters onto the shader's uniform names.
  *
  * The library calls the height-profile blend `surface`, because `profile`
- * at the API level means the whole material preset ("apple", "crystal").
+ * at the API level means the whole material preset ("water", a variant).
  * The shader predates that distinction and still calls it `profile`, so
  * the rename is absorbed here rather than churning the shader.
  */

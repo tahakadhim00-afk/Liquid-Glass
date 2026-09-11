@@ -84,8 +84,8 @@ export interface GlassParams {
   edgeWidth: number;
 }
 
-/** Built-in profile names. */
-export type ProfileName = 'apple' | 'water' | 'crystal' | 'lens' | 'subtle';
+/** The built-in profile: the water drop, which is also the default. */
+export type ProfileName = 'water';
 
 /** A profile definition: any subset of params, optionally extending another. */
 export type ProfileDefinition = Partial<GlassParams> & {
@@ -105,7 +105,7 @@ export type BackdropSource =
   | ImageBitmap | OffscreenCanvas;
 
 export interface LiquidGlassOptions extends Partial<GlassParams> {
-  /** Optical profile. Defaults to 'apple'. */
+  /** Optical profile. Defaults to 'water'; any loose option overrides it. */
   profile?: ProfileRef;
   /** Texture source. Supplying one enables the WebGL tier. */
   backdrop?: BackdropSource | null;

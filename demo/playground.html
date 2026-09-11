@@ -23,43 +23,43 @@
       </div>
 
       <label>Index of refraction <output id="out-ior"></output>
-        <input type="range" id="ior" min="1.0" max="2.2" step="0.01" value="1.48" />
+        <input type="range" id="ior" min="1.0" max="2.2" step="0.01" value="1.33" />
       </label>
       <label>Thickness <output id="out-thickness"></output>
-        <input type="range" id="thickness" min="0" max="120" step="1" value="46" />
+        <input type="range" id="thickness" min="0" max="120" step="1" value="86" />
       </label>
       <label>Bevel width <output id="out-bevel"></output>
-        <input type="range" id="bevel" min="4" max="120" step="1" value="34" />
+        <input type="range" id="bevel" min="4" max="120" step="1" value="90" />
       </label>
       <label>Bevel sharpness <output id="out-bevelPower"></output>
-        <input type="range" id="bevelPower" min="1.2" max="10" step="0.1" value="4" />
+        <input type="range" id="bevelPower" min="1.2" max="10" step="0.1" value="1.8" />
       </label>
       <label>Surface profile <output id="out-profile"></output>
-        <input type="range" id="profile" min="0" max="1" step="0.01" value="0.5" />
+        <input type="range" id="profile" min="0" max="1" step="0.01" value="0" />
       </label>
       <label>Splay (lens vs bevel) <output id="out-splay"></output>
-        <input type="range" id="splay" min="0" max="1" step="0.01" value="0" />
+        <input type="range" id="splay" min="0" max="1" step="0.01" value="0.55" />
       </label>
       <label>Dispersion <output id="out-dispersion"></output>
-        <input type="range" id="dispersion" min="0" max="0.35" step="0.001" value="0.022" />
+        <input type="range" id="dispersion" min="0" max="0.35" step="0.001" value="0.012" />
       </label>
       <label>Frost <output id="out-frost"></output>
-        <input type="range" id="frost" min="0" max="1" step="0.01" value="0.22" />
+        <input type="range" id="frost" min="0" max="1" step="0.01" value="0.05" />
       </label>
       <label>Specular <output id="out-specular"></output>
-        <input type="range" id="specular" min="0" max="2" step="0.01" value="0.85" />
+        <input type="range" id="specular" min="0" max="2" step="0.01" value="1.20" />
       </label>
       <label>Saturation <output id="out-saturation"></output>
-        <input type="range" id="saturation" min="0.5" max="2" step="0.01" value="1.28" />
+        <input type="range" id="saturation" min="0.5" max="2" step="0.01" value="1.10" />
       </label>
       <label>Tint <output id="out-tint"></output>
-        <input type="range" id="tint" min="0" max="0.5" step="0.01" value="0.06" />
+        <input type="range" id="tint" min="0" max="0.5" step="0.01" value="0.02" />
       </label>
       <label>Corner radius <output id="out-radius"></output>
-        <input type="range" id="radius" min="0" max="120" step="1" value="44" />
+        <input type="range" id="radius" min="0" max="120" step="1" value="110" />
       </label>
       <label>Liquid motion <output id="out-motion"></output>
-        <input type="range" id="motion" min="0" max="3" step="0.05" value="0.5" />
+        <input type="range" id="motion" min="0" max="3" step="0.05" value="1.4" />
       </label>
 
       <div class="backdrop-controls">
@@ -70,11 +70,7 @@
       </div>
 
       <div class="presets">
-        <button data-preset="apple">Apple-ish</button>
-        <button data-preset="water">Water drop</button>
-        <button data-preset="crystal">Crystal</button>
-        <button data-preset="subtle">Subtle</button>
-        <button data-preset="lens">Lens (Figma-like)</button>
+        <button data-preset="water">Reset to water drop defaults</button>
       </div>
       <p class="hint">Drag the panel. Move the pointer to steer the light. Arrow keys nudge when focused. Drop an image anywhere to test on it.</p>
     </div>

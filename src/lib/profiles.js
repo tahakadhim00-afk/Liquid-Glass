@@ -1,16 +1,17 @@
 /**
- * Optical profiles.
+ * The optical profile.
  *
- * A profile is the *material identity* of a piece of glass: the set of
- * physical parameters that make it read as a thin Apple control layer, a
- * water droplet, a cut crystal, or a thick lens. It is not a theme - every
- * value here feeds the refraction model, not a colour palette.
+ * The library ships one material: a water drop. Its parameters are the
+ * *material identity* of the glass - the set of physical values that make
+ * it read as a bead of liquid rather than a sheet or a stone. It is not a
+ * theme: every value here feeds the refraction model, not a palette.
  *
- * Profiles are data, deliberately. They carry no DOM, no renderer and no
- * lifecycle, so they can be inspected, diffed, serialised into a design
- * system, or authored by a designer without touching the shader.
+ * Every parameter is a plain default. A caller overrides any of them per
+ * instance (`new LiquidGlass(el, { ior: 1.5 })`), at runtime
+ * (`glass.set('motion', 0)`), or registers a named variant to reuse
+ * (`registerProfile('brand', { extends: 'water', tint: 0.1 })`).
  *
- * Each is built from the same small vocabulary:
+ * The vocabulary:
  *
  *   SHAPE      radius, bevel, bevelPower, surface, splay
  *   OPTICS     ior, dispersion, thickness, frost, saturation
@@ -20,7 +21,7 @@
  *
  * `surface` picks the height profile (kube.io's family):
  *   0   convex  - a dome, bulging toward the viewer
- *   0.5 lip     - raised rim over a shallow centre dish (Apple's look)
+ *   0.5 lip     - raised rim over a shallow centre dish
  *   1   concave - dished inward
  *
  * `splay` is the biggest structural lever: 0 is a bevelled *sheet* whose
@@ -28,26 +29,42 @@
  * a thick *lens* whose whole face curves and magnifies.
  */
 
-/** Parameters every profile may set, with the neutral baseline. */
+/**
+ * The water drop - surface tension made visible. These are the defaults
+ * every instance starts from.
+ *
+ * Water's real IOR is 1.33, and a droplet is a dome, so the surface is
+ * fully convex (0) with a low bevelPower (1.8) to round the profile off
+ * instead of chamfering it. The bevel is nearly as wide as the shape,
+ * which is what turns a rounded rect into a bead of liquid; splay 0.55
+ * lets the face itself curve so it magnifies a little. Frost is near zero
+ * because water is clear, and motion is high because the whole point is
+ * that it wobbles.
+ */
 export const BASE_PROFILE = {
   // --- shape ---------------------------------------------------------
-  radius: 44,
-  bevel: 34,
-  bevelPower: 4.0,
-  surface: 0.5,
-  splay: 0.0,
+  /** Corner radius, px. Adopted from the host's CSS when it has one. */
+  radius: 110,
+  /** Width of the refracting rim, px. */
+  bevel: 90,
+  /** Superellipse exponent: 2 = circle, 4 = squircle. */
+  bevelPower: 1.8,
+  /** 0 convex, 0.5 lip, 1 concave. */
+  surface: 0.0,
+  /** 0 bevelled sheet, 1 thick lens. */
+  splay: 0.55,
 
   // --- optics --------------------------------------------------------
-  ior: 1.48,
-  dispersion: 0.022,
-  thickness: 46,
-  frost: 0.22,
-  saturation: 1.28,
+  ior: 1.33,
+  dispersion: 0.012,
+  thickness: 86,
+  frost: 0.05,
+  saturation: 1.10,
 
   // --- surface treatment ---------------------------------------------
-  tint: 0.06,
+  tint: 0.02,
   tintColor: [1.0, 1.0, 1.0],
-  specular: 0.85,
+  specular: 1.20,
 
   // --- light source ---------------------------------------------------
   light: [-0.45, -0.85],
@@ -57,23 +74,24 @@ export const BASE_PROFILE = {
   lightColor: [1.0, 1.0, 1.0],
   lightIntensity: 1.0,
   lightRange: 600,
-  lightRadius: 0.25,
+  /** A tight source: droplets give a sharp glint. */
+  lightRadius: 0.12,
   lightWrap: 0.25,
   lightAmbient: 0.10,
 
   // --- motion / cost ---------------------------------------------------
-  motion: 0.5,
+  motion: 1.4,
   quality: 1.0,
 
   // --- overall strength -------------------------------------------------
   /**
-   * Master gain on the optical effect. 1 = the profile as authored.
+   * Master gain on the optical effect. 1 = the drop as authored.
    *
    * It exists because the alternative - telling a caller to raise `ior`,
    * `thickness`, `dispersion` and `frost` together - requires knowing how
    * those interact, and getting the ratios wrong is what turns glass into
    * plastic. Scaling them as a group preserves the material's identity:
-   * `water` at 2 is still unmistakably water, only stronger.
+   * the drop at 2 is still unmistakably water, only stronger.
    */
   intensity: 1.0,
   /** Extra gain on the corner rim light specifically. */
@@ -82,9 +100,10 @@ export const BASE_PROFILE = {
   // --- edge treatment ---------------------------------------------------
   /** Width of the soft border-light band, as a fraction of the bevel. */
   rimWidth: 0.55,
-  /** Strength of the thin specular line at the very edge, 0..1. */
+  /** Strength of a thin specular line at the very edge, 0..1. Off: a
+   *  droplet has no hard edge to catch one. */
   edgeLine: 0.0,
-  /** Width of that line in CSS px. ~1.5 matches a real device. */
+  /** Width of that line in CSS px, when enabled. */
   edgeWidth: 1.5,
 };
 
@@ -93,11 +112,11 @@ export const BASE_PROFILE = {
  *
  * Only the four that read as "how much glass is this" are scaled. Shape
  * (radius, bevel, surface) is identity, not strength - scaling it would
- * change which profile you are looking at rather than how strong it is.
+ * change what you are looking at rather than how strong it is.
  *
  * IOR is scaled about 1.0 because that is air: an IOR of 1 bends nothing,
  * so the strength of the refraction is the *excess* over 1, not the value
- * itself. Doubling 1.48 naively would give 2.96, far past diamond.
+ * itself. Doubling 1.33 naively would give 2.66, past diamond.
  *
  * @param {object} params  a resolved parameter set
  * @returns {object} the same shape, with strength terms scaled
@@ -114,122 +133,24 @@ export function applyIntensity(params) {
   };
 }
 
-/**
- * The built-in profiles.
- *
- * Every entry states *why* its numbers are what they are, because the
- * values are meaningless without the physical intent behind them.
- */
+/** The built-in profile: the water drop, i.e. the defaults as they are. */
 const BUILTIN = {
-  /**
-   * Apple-ish - the iOS 26 control layer ("regular" Liquid Glass).
-   *
-   * A thin sheet, not a blob: splay 0 keeps the face optically flat so
-   * content behind it stays readable, and all the bending is gathered at
-   * the rim. The lip surface (0.5) gives the raised edge over a shallow
-   * dish that reads as Apple's material rather than a dome.
-   *
-   * What separates it from generic glassmorphism (RESEARCH.md 17):
-   *  - a crisp ~1.5px specular line on the lit edge, faint on the far
-   *    side, rather than a wide soft glow (edgeLine / rimWidth)
-   *  - modest lensing: thickness 24 displaces the rim by ~8-12px on a
-   *    control-sized panel, not the 30-40px of a thick slab
-   *  - a real blur (~13px CSS) with saturation pushed hard, plus a light
-   *    white tint, so the face stays vivid instead of grey
-   *  - near-zero dispersion; visible prismatic colour is the fastest way
-   *    to stop looking like a system control
-   */
-  apple: {
-    label: 'Apple-ish',
-    radius: 44, bevel: 26, bevelPower: 4.0, surface: 0.5, splay: 0.0,
-    ior: 1.45, dispersion: 0.010, thickness: 24, frost: 0.30,
-    saturation: 1.65, tint: 0.12, specular: 0.70, motion: 0.35,
-    lightRadius: 0.35, lightWrap: 0.35, lightAmbient: 0.20,
-    rimWidth: 0.30, edgeLine: 1.0, edgeWidth: 1.5,
-  },
-
-  /**
-   * Water drop - surface tension made visible.
-   *
-   * Water's real IOR is 1.33, and a droplet is a dome, so surface goes
-   * fully convex (0) with a low bevelPower (1.8) to round the profile off
-   * instead of chamfering it. The bevel is nearly as wide as the shape,
-   * which is what turns a rounded rect into a bead of liquid. Frost is
-   * near zero because water is clear, and motion is high because the whole
-   * point is that it wobbles.
-   */
-  water: {
-    label: 'Water drop',
-    radius: 110, bevel: 90, bevelPower: 1.8, surface: 0.0, splay: 0.55,
-    ior: 1.33, dispersion: 0.012, thickness: 86, frost: 0.05,
-    saturation: 1.10, tint: 0.02, specular: 1.20, motion: 1.4,
-    lightRadius: 0.12,   // a tight source: droplets give a sharp glint
-  },
-
-  /**
-   * Crystal - a cut, faceted stone.
-   *
-   * High IOR (1.9) bends hard, and wide dispersion (0.075) splits the
-   * spectrum the way leaded glass does. bevelPower 2.0 is the circular
-   * profile, whose slope is infinite at the edge - a genuinely hard
-   * optical boundary, where the squircle would soften it. A narrow bevel
-   * over a small radius keeps the facet crisp.
-   */
-  crystal: {
-    label: 'Crystal',
-    radius: 28, bevel: 26, bevelPower: 2.0, surface: 0.35, splay: 0.0,
-    ior: 1.90, dispersion: 0.075, thickness: 64, frost: 0.07,
-    saturation: 1.45, tint: 0.03, specular: 1.35, motion: 0.2,
-    lightRadius: 0.08,   // hard glints, not a soft sheen
-    lightWrap: 0.10,
-  },
-
-  /**
-   * Lens - the Figma "Glass" behaviour.
-   *
-   * splay 0.85 is the whole story: the face curves rather than only the
-   * rim, so content is displaced and magnified right across the panel.
-   * Frost is zero because a magnifier that blurs is a contradiction, and
-   * motion is zero because a lens is a solid object, not a liquid.
-   */
-  lens: {
-    label: 'Lens',
-    radius: 44, bevel: 60, bevelPower: 2.2, surface: 0.0, splay: 0.85,
-    ior: 1.20, dispersion: 0.055, thickness: 34, frost: 0.0,
-    saturation: 1.10, tint: 0.0, specular: 0.6, motion: 0.0,
-  },
-
-  /**
-   * Subtle - minimal, for dense UI.
-   *
-   * Deliberately close to conventional frosted glass: low IOR, thin slab,
-   * heavy frost. Useful both as a restrained option for real interfaces
-   * and as an A/B control - the gap between this and `apple` over the same
-   * background is precisely the contribution of refraction.
-   */
-  subtle: {
-    label: 'Subtle',
-    radius: 32, bevel: 20, bevelPower: 3.0, surface: 0.5, splay: 0.0,
-    ior: 1.18, dispersion: 0.008, thickness: 18, frost: 0.42,
-    saturation: 1.15, tint: 0.10, specular: 0.45, motion: 0.15,
-    lightRadius: 0.5,    // broad, soft: nothing should catch the eye
-    lightAmbient: 0.18,
-  },
+  water: { label: 'Water drop' },
 };
 
 /** Custom profiles registered at runtime. */
 const custom = new Map();
 
 /**
- * Register a profile, optionally extending an existing one.
+ * Register a named variant, optionally extending an existing one.
  *
- * Extending is the common case: a brand rarely wants a new *material*, it
- * wants Apple's material in its own tint.
+ * A variant is a set of overrides you want to reuse. The common case is a
+ * brand wanting the same drop in its own tint:
  *
- *   registerProfile('brand', { extends: 'apple', tintColor: [0.9, 0.95, 1] });
+ *   registerProfile('brand', { extends: 'water', tintColor: [0.9, 0.95, 1] });
  *
  * @param {string} name
- * @param {object} definition  profile values, plus optional `extends`
+ * @param {object} definition  parameter values, plus optional `extends`
  * @returns {object} the resolved profile
  */
 export function registerProfile(name, definition = {}) {
@@ -254,7 +175,7 @@ export function hasProfile(name) {
   return custom.has(name) || Object.hasOwn(BUILTIN, name);
 }
 
-/** @returns {string[]} every known profile name, built-ins first. */
+/** @returns {string[]} every known profile name, built-in first. */
 export function profileNames() {
   return [...Object.keys(BUILTIN), ...custom.keys()];
 }
@@ -269,7 +190,7 @@ export function profileNames() {
  * @param {string|object} profile
  * @returns {object} a complete, independent parameter set
  */
-export function resolveProfile(profile = 'apple') {
+export function resolveProfile(profile = 'water') {
   if (profile && typeof profile === 'object') {
     const { extends: parent, ...values } = profile;
     const base = parent ? resolveProfile(parent) : { ...BASE_PROFILE };
@@ -285,5 +206,5 @@ export function resolveProfile(profile = 'apple') {
   return { ...BASE_PROFILE, ...(custom.get(profile) ?? BUILTIN[profile]) };
 }
 
-/** Built-in profile names, in presentation order. */
+/** Built-in profile names. */
 export const PROFILES = Object.freeze(Object.keys(BUILTIN));

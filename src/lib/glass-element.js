@@ -7,7 +7,7 @@
  * not take it over.
  *
  *   const glass = new LiquidGlass(document.querySelector('.card'), {
- *     profile: 'apple',
+ *     profile: 'water',
  *   });
  *
  * Design rules that fall out of "must work on a real site":
@@ -47,7 +47,7 @@ export class LiquidGlass {
   /**
    * @param {HTMLElement} host              element to apply the material to
    * @param {object}      [options]
-   * @param {string|object} [options.profile='apple']  optical profile
+   * @param {string|object} [options.profile='water']  optical profile
    * @param {*}           [options.backdrop]  texture source; enables WebGL
    * @param {string}      [options.tier]      force a tier, for testing
    * @param {boolean}     [options.interactive=true]  light follows pointer
@@ -62,12 +62,12 @@ export class LiquidGlass {
     this.id = `lg${++instanceSeq}`;
     this._destroyed = false;
 
-    const { profile = 'apple', backdrop = null, tier, interactive = true,
+    const { profile = 'water', backdrop = null, tier, interactive = true,
             observeResize = true, ...overrides } = options;
 
     // A profile name/object resolves to a full parameter set, then any
     // loose options override it. That is what makes
-    // `{ profile: 'crystal', ior: 2.0 }` work as one would expect.
+    // `{ ior: 1.5, motion: 0 }` work as one would expect.
     this.params = { ...resolveProfile(profile), ...overrides };
     this.profileName = typeof profile === 'string' ? profile : 'custom';
 

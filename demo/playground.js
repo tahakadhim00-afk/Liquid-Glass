@@ -1,27 +1,11 @@
 import { LiquidGlassPanel } from '../src/core/panel.js';
 
 const PRESETS = {
-  // Tuned to read like the iOS 26 control layer: a crisp hairline on the
-  // lit edge, a narrow rim, modest lensing, a real blur with the colour
-  // pushed hard. See RESEARCH.md section 17.
-  apple:   { ior: 1.45, thickness: 24, bevel: 26, bevelPower: 4.0, profile: 0.5, dispersion: 0.010,
-             frost: 0.30, splay: 0.0, specular: 0.70, saturation: 1.65, tint: 0.12, radius: 44, motion: 0.35,
-             lightRadius: 0.35, lightWrap: 0.35, lightAmbient: 0.20,
-             rimWidth: 0.30, edgeLine: 1.0, edgeWidth: 1.5 },
-  // Fat, round, low-power bevel = a dome. Heavy bend, near-clear surface.
+  // The library's material and its defaults. Fat, round, low-power bevel
+  // = a dome; heavy bend, near-clear surface, and it wobbles.
   water:   { ior: 1.33, thickness: 86, bevel: 90, bevelPower: 1.8, profile: 0.0, dispersion: 0.012,
-             frost: 0.05, splay: 0.55, specular: 1.20, saturation: 1.10, tint: 0.02, radius: 110, motion: 1.4 },
-  // High IOR + wide dispersion = prismatic edges.
-  crystal: { ior: 1.90, thickness: 64, bevel: 26, bevelPower: 2.0, profile: 0.35, dispersion: 0.075,
-             frost: 0.07, splay: 0.0, specular: 1.35, saturation: 1.45, tint: 0.03, radius: 28, motion: 0.2 },
-  // Closest to a conventional frosted panel, for A/B comparison.
-  subtle:  { ior: 1.18, thickness: 18, bevel: 20, bevelPower: 3.0, profile: 0.5, dispersion: 0.008,
-             frost: 0.42, splay: 0.0, specular: 0.45, saturation: 1.15, tint: 0.10, radius: 32, motion: 0.15 },
-  // Matches the Figma "Glass" look: the whole face curves, so content is
-  // displaced and magnified across the panel rather than only at the rim,
-  // with strong edge-concentrated dispersion and no frost.
-  lens:    { ior: 1.20, thickness: 34, bevel: 60, bevelPower: 2.2, profile: 0.0, dispersion: 0.055,
-             frost: 0.0, splay: 0.85, specular: 0.6, saturation: 1.10, tint: 0.0, radius: 44, motion: 0.0 },
+             frost: 0.05, splay: 0.55, specular: 1.20, saturation: 1.10, tint: 0.02, radius: 110, motion: 1.4,
+             lightRadius: 0.12, edgeLine: 0.0, rimWidth: 0.55 },
 };
 
 const SLIDERS = ['ior', 'thickness', 'bevel', 'bevelPower', 'profile', 'splay', 'dispersion',
@@ -30,7 +14,7 @@ const SLIDERS = ['ior', 'thickness', 'bevel', 'bevelPower', 'profile', 'splay', 
 const stage = document.getElementById('stage');
 
 const panel = new LiquidGlassPanel(stage, {
-  ...PRESETS.apple,
+  ...PRESETS.water,
   width: 400,
   height: 220,
   x: Math.round(window.innerWidth / 2 - 200),
