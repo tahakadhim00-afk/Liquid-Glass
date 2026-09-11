@@ -22,9 +22,7 @@ const PRESETS = {
 };
 
 const SLIDERS = ['ior', 'thickness', 'bevel', 'bevelPower', 'profile', 'splay', 'dispersion',
-                 'frost', 'specular', 'saturation', 'tint', 'radius', 'motion',
-                 'lightIntensity', 'lightHeight', 'lightRange', 'lightRadius',
-                 'lightWrap', 'lightAmbient'];
+                 'frost', 'specular', 'saturation', 'tint', 'radius', 'motion'];
 
 const stage = document.getElementById('stage');
 
@@ -60,7 +58,7 @@ function syncSlider(id) {
   // Fractional controls keep a fixed decimal count so the readout does not
   // jump width as the value crosses a whole number.
   const DECIMALS = { dispersion: 3, profile: 2, splay: 2,
-    lightIntensity: 2, lightRadius: 2, lightWrap: 2, lightAmbient: 2, frost: 2, ior: 2, bevelPower: 1, saturation: 2, specular: 2, tint: 2, motion: 2 };
+    frost: 2, ior: 2, bevelPower: 1, saturation: 2, specular: 2, tint: 2, motion: 2 };
   const dp = DECIMALS[id];
   out.textContent = dp == null ? String(value) : value.toFixed(dp);
   panel.setOption(id, value);
@@ -72,50 +70,6 @@ for (const id of SLIDERS) {
   input.addEventListener('input', () => syncSlider(id));
   syncSlider(id);
 }
-
-// --- light source ------------------------------------------------------
-// The angle slider drives the DIRECTIONAL light's vector. uLight points
-// *toward* the source in y-down space, so 0deg puts it to the right and
-// the angle sweeps clockwise on screen, matching how the gradient moves.
-const angleInput = document.getElementById('lightAngle');
-const angleOut = document.getElementById('out-lightAngle');
-
-function syncAngle() {
-  const deg = parseFloat(angleInput.value);
-  angleOut.textContent = `${deg}°`;
-  const rad = (deg * Math.PI) / 180;
-  const vec = [Math.cos(rad), Math.sin(rad)];
-  panel.setOption('light', vec);
-  // Seed the spring too, so dragging the slider moves the light smoothly
-  // instead of fighting the pointer-follow easing.
-  panel.lightTarget = vec;
-}
-angleInput.addEventListener('input', syncAngle);
-syncAngle();
-
-const modeSelect = document.getElementById('lightMode');
-modeSelect.addEventListener('change', () => {
-  panel.setOption('lightMode', parseFloat(modeSelect.value));
-});
-panel.setOption('lightMode', parseFloat(modeSelect.value));
-
-// sRGB hex -> linear-ish RGB triple. The shader multiplies the border
-// gradient by this, so a warm colour tints the lit edge without touching
-// the refracted backdrop underneath.
-const colorInput = document.getElementById('lightColor');
-function syncColor() {
-  const hex = colorInput.value;
-  const rgb = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
-  panel.setOption('lightColor', rgb);
-}
-colorInput.addEventListener('input', syncColor);
-syncColor();
-
-const followInput = document.getElementById('followPointer');
-followInput.addEventListener('change', () => {
-  panel.setOption('followPointer', followInput.checked);
-});
-panel.setOption('followPointer', followInput.checked);
 
 // --- presets -----------------------------------------------------------
 for (const button of document.querySelectorAll('.presets button')) {

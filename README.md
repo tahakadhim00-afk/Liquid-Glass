@@ -55,16 +55,7 @@ Live parameters and five presets — *Apple-ish*, *Water drop*, *Crystal*, *Subt
 - **Index of refraction** — 1.33 water, 1.5 glass, 1.9+ prismatic.
 - **Frost** — surface roughness, 0 polished to 1 etched. A scatter-radius slider only: it widens the backdrop blur and nothing else. It does not add haze or drain colour — a rough glass *surface* redistributes the light passing through it, it does not behave like a translucent solid.
 
-### Light source
-
-The border gradient is shaded by a real light, not a static CSS gradient:
-
-- **Type** — directional (parallel rays, like the sun) or positional (radiates from a point, like a lamp).
-- **Position / height** — where a positional light sits; drag the pointer to move it, or set it directly.
-- **Colour, intensity** — tints and scales the border and specular terms only, leaving the refracted backdrop untouched.
-- **Range** — distance to half brightness; 0 disables falloff.
-- **Source size / wrap** — a larger apparent source widens the specular lobe, softens the terminator, and wraps the lit band further round the border, the way a softbox differs from a bare bulb.
-- **Ambient** — floor so the unlit side of the border never goes fully black.
+The border gradient is shaded by a real light, not a static CSS gradient — moving the pointer steers a directional source and the rim brightens and darkens accordingly, rather than a fixed sheen baked into the shape. The underlying model (position, colour, intensity, falloff, source size, wrap) is a panel option (`LiquidGlassPanel` constructor / `setOption`) rather than exposed in the demo UI.
 
 Compare *Apple-ish* against *Subtle* over the same background: *Subtle* is deliberately near-frosted-glass, so the difference is exactly the contribution of refraction.
 

@@ -62,50 +62,6 @@
         <input type="range" id="motion" min="0" max="3" step="0.05" value="0.5" />
       </label>
 
-      <fieldset class="light-controls">
-        <legend>Light source</legend>
-
-        <label class="row">
-          <span>Type</span>
-          <select id="lightMode">
-            <option value="0">Directional (sun)</option>
-            <option value="1">Positional (lamp)</option>
-          </select>
-        </label>
-
-        <label class="row">
-          <span>Colour</span>
-          <input type="color" id="lightColor" value="#ffffff" />
-        </label>
-
-        <label class="row check">
-          <input type="checkbox" id="followPointer" checked />
-          <span>Follow pointer</span>
-        </label>
-
-        <label>Angle <output id="out-lightAngle"></output>
-          <input type="range" id="lightAngle" min="0" max="360" step="1" value="242" />
-        </label>
-        <label>Intensity <output id="out-lightIntensity"></output>
-          <input type="range" id="lightIntensity" min="0" max="3" step="0.01" value="1" />
-        </label>
-        <label>Height <output id="out-lightHeight"></output>
-          <input type="range" id="lightHeight" min="10" max="800" step="5" value="180" />
-        </label>
-        <label>Range <output id="out-lightRange"></output>
-          <input type="range" id="lightRange" min="0" max="2000" step="10" value="600" />
-        </label>
-        <label>Source size <output id="out-lightRadius"></output>
-          <input type="range" id="lightRadius" min="0" max="1" step="0.01" value="0.25" />
-        </label>
-        <label>Wrap <output id="out-lightWrap"></output>
-          <input type="range" id="lightWrap" min="0" max="1" step="0.01" value="0.25" />
-        </label>
-        <label>Ambient <output id="out-lightAmbient"></output>
-          <input type="range" id="lightAmbient" min="0" max="1" step="0.01" value="0.1" />
-        </label>
-      </fieldset>
-
       <div class="backdrop-controls">
         <button id="upload-btn" type="button">Upload image</button>
         <button id="reset-backdrop" type="button" hidden>Use demo scene</button>
