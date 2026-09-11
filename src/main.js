@@ -1,0 +1,211 @@
+import { LiquidGlassPanel } from './core/panel.js';
+
+const PRESETS = {
+  // Tuned to read like the iOS 26 control layer: thin, bright rim, low
+  // dispersion, frost strong enough to hide detail but not the colour.
+  apple:   { ior: 1.48, thickness: 46, bevel: 34, bevelPower: 4.0, profile: 0.5, dispersion: 0.022,
+             frost: 0.22, splay: 0.0, specular: 0.85, saturation: 1.28, tint: 0.06, radius: 44, motion: 0.5 },
+  // Fat, round, low-power bevel = a dome. Heavy bend, near-clear surface.
+  water:   { ior: 1.33, thickness: 86, bevel: 90, bevelPower: 1.8, profile: 0.0, dispersion: 0.012,
+             frost: 0.05, splay: 0.55, specular: 1.20, saturation: 1.10, tint: 0.02, radius: 110, motion: 1.4 },
+  // High IOR + wide dispersion = prismatic edges.
+  crystal: { ior: 1.90, thickness: 64, bevel: 26, bevelPower: 2.0, profile: 0.35, dispersion: 0.075,
+             frost: 0.07, splay: 0.0, specular: 1.35, saturation: 1.45, tint: 0.03, radius: 28, motion: 0.2 },
+  // Closest to a conventional frosted panel, for A/B comparison.
+  subtle:  { ior: 1.18, thickness: 18, bevel: 20, bevelPower: 3.0, profile: 0.5, dispersion: 0.008,
+             frost: 0.42, splay: 0.0, specular: 0.45, saturation: 1.15, tint: 0.10, radius: 32, motion: 0.15 },
+  // Matches the Figma "Glass" look: the whole face curves, so content is
+  // displaced and magnified across the panel rather than only at the rim,
+  // with strong edge-concentrated dispersion and no frost.
+  lens:    { ior: 1.20, thickness: 34, bevel: 60, bevelPower: 2.2, profile: 0.0, dispersion: 0.055,
+             frost: 0.0, splay: 0.85, specular: 0.6, saturation: 1.10, tint: 0.0, radius: 44, motion: 0.0 },
+};
+
+const SLIDERS = ['ior', 'thickness', 'bevel', 'bevelPower', 'profile', 'splay', 'dispersion',
+                 'frost', 'specular', 'saturation', 'tint', 'radius', 'motion',
+                 'lightIntensity', 'lightHeight', 'lightRange', 'lightRadius',
+                 'lightWrap', 'lightAmbient'];
+
+const stage = document.getElementById('stage');
+
+const panel = new LiquidGlassPanel(stage, {
+  ...PRESETS.apple,
+  width: 400,
+  height: 220,
+  x: Math.round(window.innerWidth / 2 - 200),
+  y: Math.round(window.innerHeight / 2 - 110),
+  // Set window.__forceTier to exercise a fallback tier on capable hardware.
+  forceTier: window.__forceTier,
+});
+
+if (import.meta.env.DEV) window.__panel = panel;
+
+// --- stats -------------------------------------------------------------
+const tierEl = document.getElementById('stat-tier');
+const fpsEl = document.getElementById('stat-fps');
+const TIER_LABEL = {
+  webgl: 'WebGL2 (full)',
+  'webgl-static': 'WebGL2 (reduced motion)',
+  svg: 'SVG displacement',
+  blur: 'CSS blur fallback',
+};
+tierEl.textContent = TIER_LABEL[panel.tier] ?? panel.tier;
+panel.onStats = ({ fps }) => { fpsEl.textContent = String(fps); };
+
+// --- sliders -----------------------------------------------------------
+function syncSlider(id) {
+  const input = document.getElementById(id);
+  const out = document.getElementById(`out-${id}`);
+  const value = parseFloat(input.value);
+  // Fractional controls keep a fixed decimal count so the readout does not
+  // jump width as the value crosses a whole number.
+  const DECIMALS = { dispersion: 3, profile: 2, splay: 2,
+    lightIntensity: 2, lightRadius: 2, lightWrap: 2, lightAmbient: 2, frost: 2, ior: 2, bevelPower: 1, saturation: 2, specular: 2, tint: 2, motion: 2 };
+  const dp = DECIMALS[id];
+  out.textContent = dp == null ? String(value) : value.toFixed(dp);
+  panel.setOption(id, value);
+}
+
+for (const id of SLIDERS) {
+  const input = document.getElementById(id);
+  if (!input) continue;
+  input.addEventListener('input', () => syncSlider(id));
+  syncSlider(id);
+}
+
+// --- light source ------------------------------------------------------
+// The angle slider drives the DIRECTIONAL light's vector. uLight points
+// *toward* the source in y-down space, so 0deg puts it to the right and
+// the angle sweeps clockwise on screen, matching how the gradient moves.
+const angleInput = document.getElementById('lightAngle');
+const angleOut = document.getElementById('out-lightAngle');
+
+function syncAngle() {
+  const deg = parseFloat(angleInput.value);
+  angleOut.textContent = `${deg}°`;
+  const rad = (deg * Math.PI) / 180;
+  const vec = [Math.cos(rad), Math.sin(rad)];
+  panel.setOption('light', vec);
+  // Seed the spring too, so dragging the slider moves the light smoothly
+  // instead of fighting the pointer-follow easing.
+  panel.lightTarget = vec;
+}
+angleInput.addEventListener('input', syncAngle);
+syncAngle();
+
+const modeSelect = document.getElementById('lightMode');
+modeSelect.addEventListener('change', () => {
+  panel.setOption('lightMode', parseFloat(modeSelect.value));
+});
+panel.setOption('lightMode', parseFloat(modeSelect.value));
+
+// sRGB hex -> linear-ish RGB triple. The shader multiplies the border
+// gradient by this, so a warm colour tints the lit edge without touching
+// the refracted backdrop underneath.
+const colorInput = document.getElementById('lightColor');
+function syncColor() {
+  const hex = colorInput.value;
+  const rgb = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+  panel.setOption('lightColor', rgb);
+}
+colorInput.addEventListener('input', syncColor);
+syncColor();
+
+const followInput = document.getElementById('followPointer');
+followInput.addEventListener('change', () => {
+  panel.setOption('followPointer', followInput.checked);
+});
+panel.setOption('followPointer', followInput.checked);
+
+// --- presets -----------------------------------------------------------
+for (const button of document.querySelectorAll('.presets button')) {
+  button.addEventListener('click', () => {
+    const preset = PRESETS[button.dataset.preset];
+    if (!preset) return;
+    for (const [key, value] of Object.entries(preset)) {
+      const input = document.getElementById(key);
+      if (input) { input.value = String(value); syncSlider(key); }
+      else panel.setOption(key, value);
+    }
+  });
+}
+
+// --- backdrop image ----------------------------------------------------
+// A photo is the honest test: synthetic gradients are smooth enough to
+// hide sampling errors that real detail and hard edges expose immediately.
+const uploadBtn = document.getElementById('upload-btn');
+const uploadInput = document.getElementById('upload-input');
+const resetBtn = document.getElementById('reset-backdrop');
+const nameEl = document.getElementById('upload-name');
+
+let objectURL = null;   // revoked on replace, so repeat uploads do not leak
+
+function clearObjectURL() {
+  if (objectURL) { URL.revokeObjectURL(objectURL); objectURL = null; }
+}
+
+function loadImageFile(file) {
+  if (!file || !file.type.startsWith('image/')) {
+    nameEl.hidden = false;
+    nameEl.textContent = 'Not an image file.';
+    return;
+  }
+
+  clearObjectURL();
+  objectURL = URL.createObjectURL(file);
+
+  const img = new Image();
+  img.onload = () => {
+    panel.backdrop.setImage(img);
+    panel.backdrop.invalidate();
+    resetBtn.hidden = false;
+    nameEl.hidden = false;
+    nameEl.textContent = `${file.name} · ${img.naturalWidth}×${img.naturalHeight}`;
+  };
+  img.onerror = () => {
+    clearObjectURL();
+    nameEl.hidden = false;
+    nameEl.textContent = 'Could not decode that image.';
+  };
+  img.src = objectURL;
+}
+
+uploadBtn.addEventListener('click', () => uploadInput.click());
+uploadInput.addEventListener('change', (e) => {
+  loadImageFile(e.target.files?.[0]);
+  // Reset so re-picking the same file still fires a change event.
+  e.target.value = '';
+});
+
+resetBtn.addEventListener('click', () => {
+  clearObjectURL();
+  panel.backdrop.setImage(null);
+  panel.backdrop.invalidate();
+  resetBtn.hidden = true;
+  nameEl.hidden = true;
+});
+
+// Drop anywhere on the page.
+const stopDefault = (e) => { e.preventDefault(); e.stopPropagation(); };
+window.addEventListener('dragover', (e) => {
+  stopDefault(e);
+  document.body.classList.add('dropping');
+});
+window.addEventListener('dragleave', (e) => {
+  stopDefault(e);
+  if (e.relatedTarget === null) document.body.classList.remove('dropping');
+});
+window.addEventListener('drop', (e) => {
+  stopDefault(e);
+  document.body.classList.remove('dropping');
+  loadImageFile(e.dataTransfer?.files?.[0]);
+});
+
+// --- collapse ----------------------------------------------------------
+const controls = document.getElementById('panel-controls');
+const toggle = document.getElementById('toggle-controls');
+toggle.addEventListener('click', () => {
+  const collapsed = controls.classList.toggle('collapsed');
+  toggle.textContent = collapsed ? 'Show' : 'Hide';
+  toggle.setAttribute('aria-expanded', String(!collapsed));
+});

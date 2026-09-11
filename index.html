@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Liquid Glass — WebGL prototype</title>
+<link rel="stylesheet" href="/src/styles.css" />
+</head>
+<body>
+  <div id="stage"></div>
+
+  <aside id="panel-controls" aria-label="Effect controls">
+    <header>
+      <h1>Liquid Glass</h1>
+      <button id="toggle-controls" aria-expanded="true" aria-controls="controls-body">Hide</button>
+    </header>
+    <div id="controls-body">
+      <div class="stat">
+        <span>Renderer</span><strong id="stat-tier">—</strong>
+      </div>
+      <div class="stat">
+        <span>FPS</span><strong id="stat-fps">—</strong>
+      </div>
+
+      <label>Index of refraction <output id="out-ior"></output>
+        <input type="range" id="ior" min="1.0" max="2.2" step="0.01" value="1.48" />
+      </label>
+      <label>Thickness <output id="out-thickness"></output>
+        <input type="range" id="thickness" min="0" max="120" step="1" value="46" />
+      </label>
+      <label>Bevel width <output id="out-bevel"></output>
+        <input type="range" id="bevel" min="4" max="120" step="1" value="34" />
+      </label>
+      <label>Bevel sharpness <output id="out-bevelPower"></output>
+        <input type="range" id="bevelPower" min="1.2" max="10" step="0.1" value="4" />
+      </label>
+      <label>Surface profile <output id="out-profile"></output>
+        <input type="range" id="profile" min="0" max="1" step="0.01" value="0.5" />
+      </label>
+      <label>Splay (lens vs bevel) <output id="out-splay"></output>
+        <input type="range" id="splay" min="0" max="1" step="0.01" value="0" />
+      </label>
+      <label>Dispersion <output id="out-dispersion"></output>
+        <input type="range" id="dispersion" min="0" max="0.35" step="0.001" value="0.022" />
+      </label>
+      <label>Frost <output id="out-frost"></output>
+        <input type="range" id="frost" min="0" max="1" step="0.01" value="0.22" />
+      </label>
+      <label>Specular <output id="out-specular"></output>
+        <input type="range" id="specular" min="0" max="2" step="0.01" value="0.85" />
+      </label>
+      <label>Saturation <output id="out-saturation"></output>
+        <input type="range" id="saturation" min="0.5" max="2" step="0.01" value="1.28" />
+      </label>
+      <label>Tint <output id="out-tint"></output>
+        <input type="range" id="tint" min="0" max="0.5" step="0.01" value="0.06" />
+      </label>
+      <label>Corner radius <output id="out-radius"></output>
+        <input type="range" id="radius" min="0" max="120" step="1" value="44" />
+      </label>
+      <label>Liquid motion <output id="out-motion"></output>
+        <input type="range" id="motion" min="0" max="3" step="0.05" value="0.5" />
+      </label>
+
+      <fieldset class="light-controls">
+        <legend>Light source</legend>
+
+        <label class="row">
+          <span>Type</span>
+          <select id="lightMode">
+            <option value="0">Directional (sun)</option>
+            <option value="1">Positional (lamp)</option>
+          </select>
+        </label>
+
+        <label class="row">
+          <span>Colour</span>
+          <input type="color" id="lightColor" value="#ffffff" />
+        </label>
+
+        <label class="row check">
+          <input type="checkbox" id="followPointer" checked />
+          <span>Follow pointer</span>
+        </label>
+
+        <label>Angle <output id="out-lightAngle"></output>
+          <input type="range" id="lightAngle" min="0" max="360" step="1" value="242" />
+        </label>
+        <label>Intensity <output id="out-lightIntensity"></output>
+          <input type="range" id="lightIntensity" min="0" max="3" step="0.01" value="1" />
+        </label>
+        <label>Height <output id="out-lightHeight"></output>
+          <input type="range" id="lightHeight" min="10" max="800" step="5" value="180" />
+        </label>
+        <label>Range <output id="out-lightRange"></output>
+          <input type="range" id="lightRange" min="0" max="2000" step="10" value="600" />
+        </label>
+        <label>Source size <output id="out-lightRadius"></output>
+          <input type="range" id="lightRadius" min="0" max="1" step="0.01" value="0.25" />
+        </label>
+        <label>Wrap <output id="out-lightWrap"></output>
+          <input type="range" id="lightWrap" min="0" max="1" step="0.01" value="0.25" />
+        </label>
+        <label>Ambient <output id="out-lightAmbient"></output>
+          <input type="range" id="lightAmbient" min="0" max="1" step="0.01" value="0.1" />
+        </label>
+      </fieldset>
+
+      <div class="backdrop-controls">
+        <button id="upload-btn" type="button">Upload image</button>
+        <button id="reset-backdrop" type="button" hidden>Use demo scene</button>
+        <input type="file" id="upload-input" accept="image/*" hidden />
+        <p class="filename" id="upload-name" hidden></p>
+      </div>
+
+      <div class="presets">
+        <button data-preset="apple">Apple-ish</button>
+        <button data-preset="water">Water drop</button>
+        <button data-preset="crystal">Crystal</button>
+        <button data-preset="subtle">Subtle</button>
+        <button data-preset="lens">Lens (Figma-like)</button>
+      </div>
+      <p class="hint">Drag the panel. Move the pointer to steer the light. Arrow keys nudge when focused. Drop an image anywhere to test on it.</p>
+    </div>
+  </aside>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
