@@ -158,8 +158,18 @@ window.addEventListener('drop', (e) => {
 // --- collapse ----------------------------------------------------------
 const controls = document.getElementById('panel-controls');
 const toggle = document.getElementById('toggle-controls');
-toggle.addEventListener('click', () => {
-  const collapsed = controls.classList.toggle('collapsed');
+
+function setCollapsed(collapsed) {
+  controls.classList.toggle('collapsed', collapsed);
   toggle.textContent = collapsed ? 'Show' : 'Hide';
   toggle.setAttribute('aria-expanded', String(!collapsed));
+}
+
+toggle.addEventListener('click', () => {
+  setCollapsed(!controls.classList.contains('collapsed'));
 });
+
+// On a phone the controls dock as a bottom sheet, and opening by default
+// would hide the glass behind the very sliders meant to tune it. Start
+// collapsed there so the panel is the first thing visible.
+if (matchMedia('(max-width: 640px)').matches) setCollapsed(true);

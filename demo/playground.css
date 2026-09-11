@@ -275,8 +275,31 @@ body.dropping::after {
 
 #panel-controls.collapsed #controls-body { display: none; }
 
+/* --- phones -----------------------------------------------------------
+   Full width was making things worse: the panel grew to the height of its
+   own content and covered the entire screen, hiding the glass it exists to
+   control. Dock it to the bottom as a sheet with a capped height, so the
+   panel stays visible above it and the controls scroll within their own
+   box. The page starts collapsed on phones (see playground.js). */
 @media (max-width: 640px) {
-  #panel-controls { width: calc(100vw - 32px); }
+  #panel-controls {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: auto;
+    /* Leave the upper half of the screen for the glass itself. */
+    max-height: 52dvh;
+    border-radius: 18px 18px 0 0;
+    padding: 12px 14px calc(14px + env(safe-area-inset-bottom));
+    box-shadow: 0 -18px 50px rgba(0, 0, 0, 0.5);
+  }
+  /* Collapsed, the sheet shrinks to just its header bar. */
+  #panel-controls.collapsed { max-height: none; }
+
+  #panel-controls label { font-size: 12px; }
+  /* A comfortable touch target for the slider thumbs. */
+  #panel-controls input[type="range"] { height: 26px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

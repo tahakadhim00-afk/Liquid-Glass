@@ -67,7 +67,60 @@
   .bed {
     position: fixed; inset: 0; z-index: -1;
     overflow: hidden; pointer-events: none;
-    background: url('../assets/wallpaper/wallpaper.jpg') center / cover no-repeat;
+    background: url('./assets/wallpaper.jpg') center / cover no-repeat;
+  }
+
+  /* --- phones ---------------------------------------------------------
+     The desktop layout assumes room the phone does not have: a sticky bar
+     that wraps to two rows permanently covers content, and cards sized for
+     a three-up grid become very tall when they stack. Tighten the gutters,
+     let the bar scroll its own row, and let the cards size to their text. */
+  @media (max-width: 640px) {
+    header { padding: 34px 18px 14px; }
+    h1 { font-size: 34px; }
+    .lede { font-size: 14px; }
+    .tier { font-size: 11px; margin-top: 10px; }
+
+    .grid { padding: 16px 18px 56px; gap: 16px; grid-template-columns: 1fr; }
+
+    .card {
+      /* Cards stack, so a min-height tuned for a grid row just leaves a
+         large empty gap above text pinned to the bottom. */
+      min-height: 0;
+      padding: 18px;
+      border-radius: 20px;
+      justify-content: flex-start;
+    }
+    .card h2 { font-size: 17px; }
+    .card p { font-size: 13px; }
+
+    .bar {
+      /* One scrollable row instead of a wrapped block: a sticky element
+         that grows to two rows eats a fifth of a phone screen and never
+         gives it back. */
+      top: 8px;
+      margin-bottom: 4px;
+      padding: 10px 14px;
+      gap: 10px;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .bar::-webkit-scrollbar { display: none; }
+    .bar strong { font-size: 13px; }
+    .bar button {
+      flex: 0 0 auto;   /* do not let flex squeeze the labels */
+      font-size: 12px;
+      padding: 5px 11px;
+    }
+
+    .readable { padding: 0 18px 64px; font-size: 13px; }
+  }
+
+  /* Very narrow phones: drop the bar's label so the chips get the width. */
+  @media (max-width: 400px) {
+    .bar strong { display: none; }
   }
 </style>
 </head>
