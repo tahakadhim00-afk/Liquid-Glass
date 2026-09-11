@@ -13,13 +13,7 @@
     min-height: 200vh;
     font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
     color: #fff;
-    background:
-      radial-gradient(900px 600px at 15% 20%, #ff5f6d55, transparent 60%),
-      radial-gradient(800px 700px at 85% 30%, #24c6dc55, transparent 60%),
-      radial-gradient(700px 700px at 50% 80%, #f7971e55, transparent 60%),
-      repeating-linear-gradient(0deg, #ffffff0e 0 1px, transparent 1px 44px),
-      repeating-linear-gradient(90deg, #ffffff0e 0 1px, transparent 1px 44px),
-      #0b0d1a;
+    background: #06070f;
   }
   /* Content sits above the decorative bed; the bed is what the glass
      refracts, so it must paint below every panel. */
@@ -67,24 +61,13 @@
   .bar button[aria-pressed="true"] { background: #ffffff38; border-color: #ffffff55; }
   .readable { max-width: 1100px; margin: 0 auto; padding: 0 32px 120px; opacity: .7; }
 
-  /* Refraction is only visible when there is detail behind the glass to
-     bend, so the demo puts hard-edged content underneath: straight rules,
-     saturated blocks and text. A bent straight line is unambiguous
-     evidence of displacement, where a blurred gradient could be anything. */
-  .bed { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
-  .bed .stripe {
-    position: absolute; left: -10%; width: 120%; height: 26px;
-    background: repeating-linear-gradient(90deg,
-      #ffffffdd 0 34px, transparent 34px 68px);
-    opacity: .5;
-  }
-  .bed .blk {
-    position: absolute; width: 190px; height: 190px; border-radius: 22px;
-    filter: saturate(1.2);
-  }
-  .bed .type {
-    position: absolute; font-weight: 800; letter-spacing: -.03em;
-    font-size: 78px; color: #ffffff26; white-space: nowrap;
+  /* The wallpaper is what the glass refracts. Fixed rather than scrolling,
+     so panels move across it and the displacement reads as the panel
+     travelling over the image rather than the image sliding underneath. */
+  .bed {
+    position: fixed; inset: 0; z-index: -1;
+    overflow: hidden; pointer-events: none;
+    background: url('../assets/wallpaper/wallpaper.jpg') center / cover no-repeat;
   }
 </style>
 </head>
@@ -106,18 +89,7 @@
     <button data-p="subtle">Subtle</button>
   </div>
 
-  <div class="bed" aria-hidden="true">
-    <div class="stripe" style="top: 400px"></div>
-    <div class="stripe" style="top: 545px"></div>
-    <div class="stripe" style="top: 760px"></div>
-    <div class="blk" style="left: 150px; top: 360px; background: #ff5f6d"></div>
-    <div class="blk" style="left: 600px; top: 500px; background: #24c6dc"></div>
-    <div class="blk" style="left: 1000px; top: 380px; background: #f7971e"></div>
-    <div class="blk" style="left: 260px; top: 660px; background: #43cea2"></div>
-    <div class="blk" style="left: 880px; top: 700px; background: #514a9d"></div>
-    <div class="type" style="left: 140px; top: 455px">REFRACTION</div>
-    <div class="type" style="left: 560px; top: 690px">NOT BLUR</div>
-  </div>
+  <div class="bed" aria-hidden="true"></div>
 
   <div class="grid">
     <div class="card" data-glass="apple">
