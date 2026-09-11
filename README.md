@@ -1,25 +1,20 @@
 # Liquid Glass
 
-An Apple-style **Liquid Glass** effect for the web: real optical refraction in a WebGL2 fragment shader, with a configurable light source and graceful fallbacks for browsers without WebGL2.
+[![npm](https://img.shields.io/npm/v/@taha_kadhim/liquid-glass)](https://www.npmjs.com/package/@taha_kadhim/liquid-glass)
+[![license](https://img.shields.io/npm/l/@taha_kadhim/liquid-glass)](LICENSE)
 
-Not `backdrop-filter: blur()`. Blur *scatters* light; this *bends* it — straight lines behind the panel visibly kink at the rim, which is the thing that separates Apple's material from the frosted "glassmorphism" that came before it.
+Apple-style **Liquid Glass** for the web. Real optical refraction, five
+material profiles, and a drop-in component you attach to elements you
+already have.
 
-```bash
-npm install
-npm run dev      # http://localhost:5173
-```
-
-Drag the panel. Move the pointer to steer the light. Arrow keys nudge when focused.
-
-## Install
+Not `backdrop-filter: blur()`. Blur *scatters* light; this *bends* it —
+straight lines behind the panel visibly kink at the rim, which is what
+separates Apple's material from the frosted "glassmorphism" that came
+before it.
 
 ```bash
 npm install @taha_kadhim/liquid-glass
 ```
-
-## Two ways to use it
-
-**As a library**, attached to elements you already have:
 
 ```js
 import { LiquidGlass } from '@taha_kadhim/liquid-glass';
@@ -27,25 +22,138 @@ import { LiquidGlass } from '@taha_kadhim/liquid-glass';
 new LiquidGlass(document.querySelector('.card'), { profile: 'apple' });
 ```
 
-Five optical profiles - `apple`, `water`, `crystal`, `lens`, `subtle` -
-each a physical material rather than a theme, all extendable. The library
-styles only the material: your element keeps its layout, radius, children
-and handlers. Ships as a single dependency-free ES module with TypeScript types. See
-[`src/lib/README.md`](src/lib/README.md) for the full API, and
-`npm run dev` then open `/lib-demo.html` for a working page.
+That is the whole integration. The library styles **only the material** —
+your element keeps its own layout, padding, radius, children and event
+handlers. Zero dependencies, ships with TypeScript types.
 
-**As a playground**, the shader demo at `/` with every parameter exposed
-on sliders. That is the tuning surface; the library is the delivery
-surface.
+**[Full API reference →](src/lib/README.md)**
 
-## What it does
+---
+
+## Profiles
+
+Five built-in optical profiles. Each is a physical material, not a theme.
+
+| Profile | Character | Key parameters |
+|---|---|---|
+| `apple` | Thin control-layer sheet. Flat centre, bending gathered at the rim. | `splay 0`, `surface 0.5` (lip), `ior 1.48` |
+| `water` | Convex droplet. Wide soft bevel, clear, wobbles. | `surface 0` (convex), `ior 1.33`, `motion 1.4` |
+| `crystal` | Cut stone. Hard circular edge, prismatic fringes. | `ior 1.9`, `dispersion 0.075`, `bevelPower 2` |
+| `lens` | Figma-style. The whole face curves and magnifies. | `splay 0.85`, `frost 0` |
+| `subtle` | Near-frosted, for dense UI. The A/B control. | `ior 1.18`, `frost 0.42` |
+
+```js
+new LiquidGlass(el, { profile: 'crystal' });         // named
+new LiquidGlass(el, { profile: 'crystal', ior: 2 }); // named + override
+```
+
+A brand usually wants an existing material in its own colour, not a new
+optical model, so profiles are extendable:
+
+```js
+import { registerProfile } from '@taha_kadhim/liquid-glass';
+
+registerProfile('brand', {
+  extends: 'apple',
+  tintColor: [1.0, 0.86, 0.72],
+});
+```
+
+---
+
+## Guidelines
+
+Practical rules for getting a good result. Most "it doesn't look like the
+screenshots" reports come down to one of these.
+
+### Give it something to refract
+
+**Refraction is only visible when there is detail behind the panel.** Over
+a flat colour, glass and blur look identical — that is physics, not a bug.
+Put the panel over a photo, a gradient mesh, text, or anything with hard
+edges. A bent straight line is unambiguous evidence of displacement; a
+blurred gradient could be anything.
+
+### Style the element, not the material
+
+Set size, padding, border-radius and layout in your own CSS. The library
+reads the host's box and **adopts its corner radius**, so the material
+conforms to the shape you designed rather than imposing one.
+
+```css
+.card { border-radius: 26px; padding: 26px; }   /* yours */
+```
+
+```js
+new LiquidGlass(card, { profile: 'apple' });     /* material only */
+```
+
+### Keep text legible
+
+Glass is a background treatment; contrast is still your job. Prefer
+`apple` or `subtle` behind body copy — `crystal` and `water` displace
+enough to make small text swim. Raise `frost` to push the backdrop back,
+and remember `tint` only affects the WebGL tier.
+
+### Understand which tier you get
+
+This decides how good the effect can be, and it is the one thing worth
+reading twice.
+
+| Tier | Backdrop | Refraction | Availability |
+|---|---|---|---|
+| `webgl` | A texture **you supply** | Full shader: Snell refraction, dispersion, per-pixel light | Needs `backdrop:` |
+| `svg` | Live DOM, free | Real displacement, no per-pixel lighting | Chromium |
+| `blur` | Live DOM, free | None — scatter only | Universal |
+| `none` | — | None | No `backdrop-filter` |
+
+The reason for the split: **WebGL needs the backdrop as a texture it can
+sample, and a browser will not let anyone read the composited page.** So
+over ordinary page content the library uses `backdrop-filter`, which the
+browser feeds the real backdrop for free. WebGL is opted into by handing
+over a source:
+
+```js
+// Over page content — zero setup, SVG refraction on Chromium.
+new LiquidGlass(card, { profile: 'apple' });
+
+// Over media you control — the full shader pipeline.
+new LiquidGlass(overlay, { profile: 'crystal', backdrop: videoEl });
+```
+
+Parameters the active tier cannot honour (the light source, `splay`,
+`tint`) are stored but inert. The library logs once rather than failing
+silently, since on Safari those tiers are the norm.
+
+### Clean up
+
+Call `destroy()` when the element goes away — in a framework's unmount
+hook, or before removing the node. It releases GPU resources and
+listeners, and restores the host exactly as it was.
+
+```js
+useEffect(() => {
+  const glass = new LiquidGlass(ref.current, { profile: 'apple' });
+  return () => glass.destroy();
+}, []);
+```
+
+### Use it sparingly
+
+Each panel is a compositing layer. A handful is fine; a hundred is not.
+Offscreen panels park their render loop automatically, but the cheapest
+panel is the one you did not add.
+
+---
+
+## How it works
 
 Per pixel, in one draw call:
 
 | Stage | Technique |
 |---|---|
 | Shape | Rounded-rect SDF, `fwidth` antialiasing |
-| Surface | A blend of convex, concave and "lip" height profiles (superellipse-based), selectable per panel |
+| Surface | A blend of convex, concave and "lip" height profiles (superellipse-based) |
 | Normals | Central-difference derivative of the profile, rotated -90 degrees |
 | Refraction | Snell's law via GLSL `refract()`, ray-marched to the backdrop plane so displacement is real geometry, not a tuned constant |
 | Dispersion | Three IORs, one per colour channel, weighted by local surface tilt |
@@ -54,64 +162,89 @@ Per pixel, in one draw call:
 | Specular | Blinn-Phong, tight lobe + soft sheen, masked to the bevel |
 | Border light | A configurable point or directional source shading the rim in real time — position, colour, intensity, falloff, size and wrap all live |
 
-## Renderer tiers
+**Performance.** One draw call, no framebuffers, no post passes. A scissor
+rect confines rasterization to the panel's bounding box. The backdrop
+texture carries a mip chain, so the frost blur samples a pre-filtered
+level instead of scaling its tap count with radius — cost stays constant
+whether the blur is 5px or 500px. DPR is capped at 2, and
+`prefers-reduced-motion` disables the idle wobble.
 
-Detected at runtime and shown in the UI:
+---
 
-1. **WebGL2** (~98% of browsers) — the full pipeline above.
-2. **SVG displacement** (Chromium without WebGL) — `feImage` + three `feDisplacementMap` passes, with per-channel scale derived from the same refraction physics as the WebGL tier. Real refraction, no per-pixel border lighting. `backdrop-filter: url()` is Chromium-only.
-3. **CSS blur** (universal) — `backdrop-filter: blur() saturate()` plus layered inset shadows.
+## Repository layout
 
-`prefers-reduced-motion` drops the idle liquid animation.
-
-Force a tier for testing: `window.__forceTier = 'svg' | 'blur'` before load.
-
-## Testing on your own image
-
-**Upload image** in the controls, or drop a file anywhere on the page. The image replaces the demo scene as the backdrop, cover-fit and cropped rather than stretched; **Use demo scene** restores the original.
-
-Worth doing: a synthetic gradient is smooth enough to hide sampling errors that a real photo exposes immediately. Photos with hard straight edges — architecture, text, window frames — are the most revealing, because a bent straight line is unambiguous evidence of refraction where a blurred one could be anything.
-
-## Tuning
-
-Live parameters and five presets — *Apple-ish*, *Water drop*, *Crystal*, *Subtle*, *Lens (Figma-like)*. The ones that change the character most:
-
-- **Bevel sharpness** (`bevelPower`) — 1.8 is a water droplet, 4 is the Apple squircle, 6+ is a cut crystal chamfer.
-- **Surface profile** — convex, concave, or the "lip" blend between them (raised rim, shallow centre dip). Lip is the default and is closest to Apple's control layer.
-- **Splay** — bevelled sheet (0) vs thick lens (1). This is the biggest structural control. At 0 the centre of the panel is optically flat and all the bending happens at the rim: correct for a sheet of glass with shaped edges, and the closest match to Apple's control layer. At 1 the whole face curves, so content is displaced and magnified right across the panel — the behaviour Figma's Glass effect produces, and what reads as *thick* glass rather than a pane.
-- **Index of refraction** — 1.33 water, 1.5 glass, 1.9+ prismatic.
-- **Frost** — surface roughness, 0 polished to 1 etched. A scatter-radius slider only: it widens the backdrop blur and nothing else. It does not add haze or drain colour — a rough glass *surface* redistributes the light passing through it, it does not behave like a translucent solid.
-
-The border gradient is shaded by a real light, not a static CSS gradient — moving the pointer steers a directional source and the rim brightens and darkens accordingly, rather than a fixed sheen baked into the shape. The underlying model (position, colour, intensity, falloff, source size, wrap) is a panel option (`LiquidGlassPanel` constructor / `setOption`) rather than exposed in the demo UI.
-
-Compare *Apple-ish* against *Subtle* over the same background: *Subtle* is deliberately near-frosted-glass, so the difference is exactly the contribution of refraction.
-
-## Using it elsewhere
-
-The backdrop is pluggable. `renderer.setBackdrop()` accepts any `TexImageSource`, so swap [`src/core/backdrop.js`](src/core/backdrop.js) for a video frame, a WebGL scene, or an `html2canvas` raster without touching the shader.
-
-```js
-import { LiquidGlassPanel } from './core/panel.js';
-const panel = new LiquidGlassPanel(document.body, { width: 400, height: 220, ior: 1.48 });
 ```
-
-## Performance
-
-One draw call, no framebuffers, no post passes. A scissor rect confines rasterization to the panel's bounding box. The backdrop texture carries a mip chain (regenerated only when the backdrop actually changes) so the frost blur samples a pre-filtered level instead of scaling its tap count with radius — cost stays constant whether the blur is 5px or 500px. DPR is capped at 2.
-
-## Tests
+src/lib/      the published library
+src/core/     renderer, backdrop, tier fallbacks
+src/shaders/  the GLSL
+demo/         two demo pages (not published)
+test/         Playwright suites
+docs/         research notes
+```
 
 ```bash
-npm test
+npm install
+npm run dev          # demos at http://localhost:5173
+npm test             # full suite, headless
+npm run build:lib    # the publishable bundle
 ```
 
-Four suites, all driven through a headless Chromium (SwiftShader software rendering, so results hold without a GPU):
+`npm run dev` serves two pages:
 
-- **orientation** — the backdrop is sampled upright. Every stage of the sampling path (`grad`, `N.xy`, `refract().xy`, `uv`) stays in one y-down space; a stray axis flip mirrors the page behind the glass, and is invisible at the panel centre where refraction is zero.
-- **lens** — a bevelled sheet's interior is optically flat (zero displacement) while a thick lens bends light progressively across its whole face.
-- **light** — the border's bright band tracks a moved light source, dims with distance, and picks up the source's colour.
-- **frost** — the blur actually blurs, brightness and saturation survive it unchanged, and the result stays smooth (no sampling grain) at every radius.
+- **`/`** — the library used the way a site would use it.
+- **`/playground.html`** — the shader with every parameter on a slider.
+  Drag the panel, drop in your own image. This is the tuning surface; the
+  library is the delivery surface.
+
+### Tests
+
+Five suites, all driven through headless Chromium with SwiftShader
+software rendering, so results hold without a GPU. They assert behaviour,
+not screenshots:
+
+- **orientation** — the backdrop is sampled upright. A stray axis flip
+  mirrors the page behind the glass and is invisible at the panel centre,
+  where refraction is zero.
+- **lens** — a bevelled sheet's interior is optically flat (zero
+  displacement) while a thick lens bends light across its whole face.
+- **light** — the border's bright band tracks a moved light source, dims
+  with distance, and picks up the source's colour.
+- **frost** — the blur actually blurs, brightness and saturation survive
+  it unchanged, and the result stays smooth at every radius.
+- **library** — the integration contract: content, layout and
+  accessibility preserved; profiles resolve and override; geometry adopted
+  from the host; `destroy()` leaves no trace; instances coexist; and
+  toggling the material provably changes pixels.
+
+The dev server must be running (`npm run dev`) before `npm test`.
+
+---
+
+## Contributing
+
+Issues and pull requests are welcome.
+
+- **Optical changes need a test.** The physics is subtle enough that
+  "looks right to me" has been wrong more than once in this codebase — the
+  frost model was rebuilt twice because a metric, not an eyeball, caught
+  the problem. If you change the shader, add or extend an assertion.
+- **Keep the tiers consistent.** A change to the WebGL optics usually
+  needs the matching change in `src/core/fallback.js`, or the SVG tier
+  drifts away from it.
+- **Comment the why, not the what.** The existing comments explain the
+  physical reasoning behind each constant; that is what makes the code
+  maintainable.
+- Run `npm test` before opening a PR.
+
+---
 
 ## Research
 
-[`docs/RESEARCH.md`](docs/RESEARCH.md) — the physics, the technology comparison, the rendering pipeline, and the reasoning behind each corrected implementation detail (surface profiles and ray-marched refraction, the configurable border light, and the frost/blur rewrite).
+[`docs/RESEARCH.md`](docs/RESEARCH.md) — the physics, the technology
+comparison, the rendering pipeline, and the reasoning behind each
+implementation decision: surface profiles and ray-marched refraction, the
+configurable border light, and the frost/blur rewrite.
+
+## License
+
+MIT

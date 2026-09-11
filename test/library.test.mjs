@@ -24,7 +24,7 @@ const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 
-await page.goto('http://localhost:5173/lib-demo.html', { waitUntil: 'networkidle' });
+await page.goto('http://localhost:5173/', { waitUntil: 'networkidle' });
 await page.waitForTimeout(1800);
 
 let failures = 0;
@@ -55,9 +55,8 @@ check('no a11y attributes imposed', attach.hostTabIndex === null && attach.hostR
   `tabindex=${attach.hostTabIndex} role=${attach.hostRole}`);
 
 /* --- 2. profiles ----------------------------------------------------- */
-const profiles = await page.evaluate(async () => {
-  const { LiquidGlass, resolveProfile, registerProfile } =
-    await import('/src/lib/index.js');
+const profiles = await page.evaluate(() => {
+  const { LiquidGlass, resolveProfile, registerProfile } = window.__lg;
   const host = document.createElement('div');
   host.style.cssText = 'width:200px;height:120px;border-radius:18px';
   document.body.appendChild(host);
@@ -91,7 +90,7 @@ check('registerProfile inherits its parent',
 
 /* --- 3. geometry adoption ------------------------------------------- */
 const geom = await page.evaluate(async () => {
-  const { LiquidGlass } = await import('/src/lib/index.js');
+  const { LiquidGlass } = window.__lg;
   const host = document.createElement('div');
   // A radius the profile does not specify, to prove the host wins.
   host.style.cssText = 'width:240px;height:140px;border-radius:31px';
@@ -110,8 +109,8 @@ check('adopts the host CSS radius', geom.adopted === 31, `radius=${geom.adopted}
 check('tracks host resize', Math.round(geom.after) === 400, `width=${geom.after}`);
 
 /* --- 4. clean teardown ----------------------------------------------- */
-const teardown = await page.evaluate(async () => {
-  const { LiquidGlass } = await import('/src/lib/index.js');
+const teardown = await page.evaluate(() => {
+  const { LiquidGlass } = window.__lg;
   const host = document.createElement('div');
   host.style.cssText = 'width:200px;height:120px';
   host.innerHTML = '<p id="keepme">content</p>';

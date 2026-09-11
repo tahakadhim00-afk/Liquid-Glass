@@ -1,4 +1,4 @@
-import { LiquidGlassPanel } from './core/panel.js';
+import { LiquidGlassPanel } from '../src/core/panel.js';
 
 const PRESETS = {
   // Tuned to read like the iOS 26 control layer: thin, bright rim, low
