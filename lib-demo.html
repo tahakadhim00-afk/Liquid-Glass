@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Liquid Glass - library demo</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    isolation: isolate;   /* so the bed's -1 stays behind the page, not behind the canvas */
+    margin: 0;
+    min-height: 200vh;
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: #fff;
+    background:
+      radial-gradient(900px 600px at 15% 20%, #ff5f6d55, transparent 60%),
+      radial-gradient(800px 700px at 85% 30%, #24c6dc55, transparent 60%),
+      radial-gradient(700px 700px at 50% 80%, #f7971e55, transparent 60%),
+      repeating-linear-gradient(0deg, #ffffff0e 0 1px, transparent 1px 44px),
+      repeating-linear-gradient(90deg, #ffffff0e 0 1px, transparent 1px 44px),
+      #0b0d1a;
+  }
+  /* Content sits above the decorative bed; the bed is what the glass
+     refracts, so it must paint below every panel. */
+  header, .grid, .bar, .readable { position: relative; z-index: 1; }
+  header { padding: 64px 32px 24px; max-width: 1100px; margin: 0 auto; }
+  h1 { font-size: clamp(34px, 6vw, 60px); margin: 0 0 8px; letter-spacing: -0.02em; }
+  .lede { opacity: 0.75; max-width: 60ch; margin: 0; }
+  .tier { font: 12px ui-monospace, monospace; opacity: 0.6; margin-top: 14px; }
+
+  .grid {
+    max-width: 1100px; margin: 0 auto; padding: 24px 32px 80px;
+    display: grid; gap: 28px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+
+  /* The library styles nothing but the material. Cards are ordinary
+     page CSS - padding, radius, layout - exactly as a real site would. */
+  .card {
+    border-radius: 26px;
+    padding: 26px;
+    min-height: 190px;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    border: 1px solid #ffffff24;
+    box-shadow: 0 18px 50px #0006;
+  }
+  .card h2 { margin: 0 0 4px; font-size: 19px; }
+  .card p { margin: 0; font-size: 13.5px; opacity: 0.78; }
+  .card .tagline { font: 11px ui-monospace, monospace; opacity: .55;
+                   text-transform: uppercase; letter-spacing: .09em; margin-bottom: 10px; }
+
+  /* A sticky bar proves the material works on real layout primitives,
+     not just absolutely positioned demo boxes. */
+  .bar {
+    position: sticky; top: 16px; z-index: 5;
+    max-width: 1100px; margin: 0 auto 8px; padding: 14px 22px;
+    border-radius: 18px; border: 1px solid #ffffff24;
+    display: flex; gap: 18px; align-items: center; flex-wrap: wrap;
+  }
+  .bar strong { font-size: 14px; }
+  .bar button {
+    font: inherit; font-size: 13px; color: inherit; cursor: pointer;
+    background: #ffffff1a; border: 1px solid #ffffff2b;
+    border-radius: 999px; padding: 5px 13px;
+  }
+  .bar button[aria-pressed="true"] { background: #ffffff38; border-color: #ffffff55; }
+  .readable { max-width: 1100px; margin: 0 auto; padding: 0 32px 120px; opacity: .7; }
+
+  /* Refraction is only visible when there is detail behind the glass to
+     bend, so the demo puts hard-edged content underneath: straight rules,
+     saturated blocks and text. A bent straight line is unambiguous
+     evidence of displacement, where a blurred gradient could be anything. */
+  .bed { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+  .bed .stripe {
+    position: absolute; left: -10%; width: 120%; height: 26px;
+    background: repeating-linear-gradient(90deg,
+      #ffffffdd 0 34px, transparent 34px 68px);
+    opacity: .5;
+  }
+  .bed .blk {
+    position: absolute; width: 190px; height: 190px; border-radius: 22px;
+    filter: saturate(1.2);
+  }
+  .bed .type {
+    position: absolute; font-weight: 800; letter-spacing: -.03em;
+    font-size: 78px; color: #ffffff26; white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Liquid Glass</h1>
+    <p class="lede">The same optical model as the shader demo, packaged as a component you
+      attach to elements you already have. These cards are plain CSS; only the material
+      comes from the library.</p>
+    <p class="tier" id="tier">detecting…</p>
+  </header>
+
+  <div class="bar" id="bar">
+    <strong>Profile</strong>
+    <button data-p="apple" aria-pressed="true">Apple-ish</button>
+    <button data-p="water">Water drop</button>
+    <button data-p="crystal">Crystal</button>
+    <button data-p="lens">Lens</button>
+    <button data-p="subtle">Subtle</button>
+  </div>
+
+  <div class="bed" aria-hidden="true">
+    <div class="stripe" style="top: 400px"></div>
+    <div class="stripe" style="top: 545px"></div>
+    <div class="stripe" style="top: 760px"></div>
+    <div class="blk" style="left: 150px; top: 360px; background: #ff5f6d"></div>
+    <div class="blk" style="left: 600px; top: 500px; background: #24c6dc"></div>
+    <div class="blk" style="left: 1000px; top: 380px; background: #f7971e"></div>
+    <div class="blk" style="left: 260px; top: 660px; background: #43cea2"></div>
+    <div class="blk" style="left: 880px; top: 700px; background: #514a9d"></div>
+    <div class="type" style="left: 140px; top: 455px">REFRACTION</div>
+    <div class="type" style="left: 560px; top: 690px">NOT BLUR</div>
+  </div>
+
+  <div class="grid">
+    <div class="card" data-glass="apple">
+      <div class="tagline">apple</div><h2>Apple-ish</h2>
+      <p>Thin sheet. Flat centre, all the bending gathered at the rim.</p>
+    </div>
+    <div class="card" data-glass="water">
+      <div class="tagline">water</div><h2>Water drop</h2>
+      <p>Convex dome, IOR 1.33, wide soft bevel. It wobbles.</p>
+    </div>
+    <div class="card" data-glass="crystal">
+      <div class="tagline">crystal</div><h2>Crystal</h2>
+      <p>IOR 1.9 with wide dispersion. Hard circular edge, prismatic fringes.</p>
+    </div>
+    <div class="card" data-glass="lens">
+      <div class="tagline">lens</div><h2>Lens</h2>
+      <p>The whole face curves, so content magnifies across the panel.</p>
+    </div>
+    <div class="card" data-glass="subtle">
+      <div class="tagline">subtle</div><h2>Subtle</h2>
+      <p>Near-frosted. The A/B control: the gap to Apple-ish is refraction.</p>
+    </div>
+    <div class="card" data-glass="brand">
+      <div class="tagline">custom</div><h2>Registered profile</h2>
+      <p>Apple-ish extended with a warm tint, via registerProfile().</p>
+    </div>
+  </div>
+
+  <p class="readable">Scroll: each panel re-measures against the viewport, and panels that
+    leave the screen park their render loop.</p>
+
+  <script type="module">
+    import { LiquidGlass, registerProfile, pickTier } from './src/lib/index.js';
+
+    // A brand profile: the same material, tinted. This is the common real
+    // case - not a new optical model, just an existing one in your colour.
+    registerProfile('brand', {
+      extends: 'apple',
+      tintColor: [1.0, 0.86, 0.72],
+      tint: 0.10,
+      lightColor: [1.0, 0.92, 0.82],
+    });
+
+    const tier = pickTier();
+    document.getElementById('tier').textContent =
+      `tier: ${tier}` + (tier === 'svg'
+        ? '  (SVG displacement over live DOM - real refraction)'
+        : tier === 'blur' ? '  (CSS blur - no refraction on this browser)' : '');
+
+    const instances = [...document.querySelectorAll('[data-glass]')]
+      .map((el) => new LiquidGlass(el, { profile: el.dataset.glass }));
+
+    new LiquidGlass(document.getElementById('bar'), { profile: 'subtle' });
+
+    // Switching every panel at once, to compare profiles over identical
+    // content. setProfile keeps any per-instance overrides.
+    document.getElementById('bar').addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-p]');
+      if (!btn) return;
+      for (const b of document.querySelectorAll('.bar button')) {
+        b.setAttribute('aria-pressed', String(b === btn));
+      }
+      for (const g of instances) g.setProfile(btn.dataset.p);
+    });
+
+    window.__glass = instances;
+  </script>
+</body>
+</html>

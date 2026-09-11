@@ -11,6 +11,26 @@ npm run dev      # http://localhost:5173
 
 Drag the panel. Move the pointer to steer the light. Arrow keys nudge when focused.
 
+## Two ways to use it
+
+**As a library**, attached to elements you already have:
+
+```js
+import { LiquidGlass } from './src/lib/index.js';
+
+new LiquidGlass(document.querySelector('.card'), { profile: 'apple' });
+```
+
+Five optical profiles - `apple`, `water`, `crystal`, `lens`, `subtle` -
+each a physical material rather than a theme, all extendable. The library
+styles only the material: your element keeps its layout, radius, children
+and handlers. See [`src/lib/README.md`](src/lib/README.md) for the full
+API, and `npm run dev` then open `/lib-demo.html` for a working page.
+
+**As a playground**, the shader demo at `/` with every parameter exposed
+on sliders. That is the tuning surface; the library is the delivery
+surface.
+
 ## What it does
 
 Per pixel, in one draw call:
