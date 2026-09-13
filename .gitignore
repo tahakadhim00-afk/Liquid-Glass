@@ -5,3 +5,4 @@ dist-demo
 *.tmp.mjs
 *.tmp.png
 dist-lib
+.claude

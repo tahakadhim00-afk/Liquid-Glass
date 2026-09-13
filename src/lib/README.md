@@ -21,28 +21,64 @@ layout, padding, radius, children and event handlers.
 ## The material
 
 One material: a **water drop**. It is the default. Every parameter below
-is a plain default you can override per instance or at runtime.
+is a plain default, and **all of them are overridable** — at construction,
+at runtime, or through a named variant.
 
-| Parameter | Default | What it is |
-|---|---|---|
-| `ior` | `1.33` | Index of refraction |
-| `thickness` | `86` | Virtual slab thickness, px. Scales the displacement |
-| `bevel` | `90` | Width of the refracting rim, px |
-| `bevelPower` | `1.8` | Bevel sharpness: 2 = circle, 4 = squircle |
-| `surface` | `0` | Height profile: 0 convex, 0.5 lip, 1 concave |
-| `splay` | `0.55` | 0 = bevelled sheet, 1 = thick lens |
-| `dispersion` | `0.012` | Chromatic fringing |
-| `frost` | `0.05` | Surface roughness, 0..1 |
-| `specular` | `1.20` | Highlight strength |
-| `saturation` | `1.10` | Backdrop saturation multiplier |
-| `tint` | `0.02` | Tint strength toward `tintColor` (default white) |
-| `radius` | `110` | Corner radius, px. Adopted from the host's CSS when it has one |
-| `motion` | `1.40` | Idle liquid wobble |
+### The three ways to set any parameter
 
 ```js
-new LiquidGlass(el, { thickness: 40, splay: 0.2 });  // at construction
-glass.set('ior', 1.6);                               // at runtime
-glass.set({ frost: 0.3, tint: 0.1 });
+// 1. at construction
+const glass = new LiquidGlass(el, { ior: 1.5, thickness: 40 });
+
+// 2. at runtime — one key, or several at once
+glass.set('ior', 1.6);
+glass.set({ frost: 0.3, splay: 0.2 });
+
+// 3. as a reusable named variant
+registerProfile('card', { extends: 'water', thickness: 40, splay: 0.1 });
+new LiquidGlass(el, { profile: 'card' });
+```
+
+All three accept every parameter in the table below. `glass.getParams()`
+returns the current resolved set.
+
+### The parameters
+
+| Parameter | Default | Range | What it does |
+|---|---|---|---|
+| `ior` | `1.33` | `1`–`2.4` | Index of refraction. `1` bends nothing (air), `1.33` water, `1.5` glass, `2.4` diamond. The single biggest lever on how much the backdrop distorts. |
+| `thickness` | `86` | `0`–`200` px | Virtual slab thickness. Scales displacement: how *far* a refracted ray travels before it hits the backdrop. Lower it behind text. |
+| `bevel` | `90` | `1`–`300` px | Width of the refracting rim. Small = a thin bevelled edge on a flat sheet; large = the whole panel reads as a bead of liquid. |
+| `bevelPower` | `1.8` | `1`–`8` | Bevel sharpness. `2` is a circular arc, `4` a squircle, higher a harder chamfer. Low values round the profile off. |
+| `surface` | `0` | `0`–`1` | Height profile. `0` convex dome, `0.5` lip (raised rim over a shallow dish), `1` concave. |
+| `splay` | `0.55` | `0`–`1` | Lens vs bevel. `0` = bevelled sheet with an optically flat centre; `1` = thick lens whose whole face curves and magnifies. |
+| `dispersion` | `0.012` | `0`–`0.35` | Chromatic fringing — per-channel IOR, the prism effect. Concentrated where the surface tilts hardest. |
+| `frost` | `0.05` | `0`–`1` | Surface roughness. `0` polished, `1` heavily etched. A true blur, not a milky haze. |
+| `specular` | `1.20` | `0`–`3` | Highlight strength. `0` removes the glint entirely. |
+| `saturation` | `1.10` | `0`–`2` | Backdrop saturation multiplier. `0` renders the refracted image greyscale. |
+| `tint` | `0.02` | `0`–`1` | Tint strength toward `tintColor` (default white). Pair the two to colour the glass. |
+| `radius` | `110` | `0`–`∞` px | Corner radius. **Adopted from the host's CSS `border-radius` whenever it has one**, so this default only applies to elements with no radius of their own. |
+| `motion` | `1.40` | `0`–`4` | Idle liquid wobble. `0` freezes the surface. Forced to `0` under `prefers-reduced-motion`. |
+
+> **Four of these need the WebGL tier**: `splay`, `specular`, `tint` and
+> `motion` are stored but inert on the SVG and blur fallbacks, which have
+> no per-pixel lighting. Pass a `backdrop` source to opt into WebGL. The
+> library logs once rather than failing silently.
+
+### Recipes
+
+```js
+// Behind body copy: less displacement, flatter face, more scatter.
+new LiquidGlass(el, { thickness: 40, splay: 0.1, frost: 0.25 });
+
+// A hero panel: exaggerated, over a photo.
+new LiquidGlass(el, { intensity: 1.8, edgeLine: 0.8 });
+
+// Static, cheap: no wobble, no glint.
+new LiquidGlass(el, { motion: 0, specular: 0.4, dispersion: 0 });
+
+// A hard-edged pane rather than a droplet.
+new LiquidGlass(el, { splay: 0, bevel: 24, bevelPower: 4, edgeLine: 0.9 });
 ```
 
 ### Named variants

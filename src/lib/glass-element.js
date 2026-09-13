@@ -29,11 +29,19 @@
  *   frames on glass nobody is looking at.
  */
 
-import { resolveProfile } from './profiles.js';
+import { resolveProfile, BASE_PROFILE } from './profiles.js';
 import { pickTier, detectCapabilities } from './capabilities.js';
 import { createRenderTarget } from './render-target.js';
 
 let instanceSeq = 0;
+
+/**
+ * Keys that are not optical parameters but legitimately travel with one.
+ * `setProfile()` forwards a resolved profile straight into set(), and a
+ * resolved profile carries its own `label`, so this keeps that from being
+ * reported as a caller's typo.
+ */
+const PASSTHROUGH = new Set(['label']);
 
 /** Parameters that only the WebGL tier can honour. */
 const WEBGL_ONLY = new Set([
@@ -229,9 +237,24 @@ export class LiquidGlass {
       : keyOrValues;
 
     let ignored = null;
+    let unknown = null;
     for (const [k, v] of Object.entries(patch)) {
+      // A misspelling is otherwise indistinguishable from a parameter that
+      // simply had no visible effect: the value lands in params, reaches
+      // the renderer, and is dropped there with no uniform to bind to. In
+      // JS there is no compiler to catch it, so say it here.
+      if (!Object.hasOwn(BASE_PROFILE, k) && !PASSTHROUGH.has(k)) {
+        (unknown ??= []).push(k);
+      }
       this.params[k] = v;
       if (this.tier !== 'webgl' && WEBGL_ONLY.has(k)) (ignored ??= []).push(k);
+    }
+
+    if (unknown) {
+      console.warn(
+        `[liquid-glass] unknown parameter${unknown.length > 1 ? 's' : ''}: ` +
+        `${unknown.join(', ')}. Known: ${Object.keys(BASE_PROFILE).join(', ')}`,
+      );
     }
 
     // Silence here would look like a bug on Safari, where these tiers are

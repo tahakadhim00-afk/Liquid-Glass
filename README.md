@@ -39,29 +39,41 @@ One material: a **water drop**. It is the default, so the simplest call is
 new LiquidGlass(el);
 ```
 
-Its defaults, every one overridable:
+Its defaults — **every one overridable**, at construction, at runtime, or
+through a named variant:
 
-| Parameter | Default | What it is |
-|---|---|---|
-| `ior` | `1.33` | Index of refraction — water's real value |
-| `thickness` | `86` | Virtual slab thickness, px. Scales the displacement |
-| `bevel` | `90` | Width of the refracting rim, px |
-| `bevelPower` | `1.8` | Bevel sharpness: 2 = circle, 4 = squircle |
-| `surface` | `0` | Height profile: 0 convex dome, 0.5 lip, 1 concave |
-| `splay` | `0.55` | 0 = bevelled sheet (flat centre), 1 = thick lens |
-| `dispersion` | `0.012` | Chromatic fringing at the edges |
-| `frost` | `0.05` | Surface roughness: 0 polished, 1 etched |
-| `specular` | `1.20` | Highlight strength |
-| `saturation` | `1.10` | Backdrop saturation multiplier |
-| `tint` | `0.02` | Tint strength, toward `tintColor` (default white) |
-| `radius` | `110` | Corner radius, px — see note |
-| `motion` | `1.40` | Idle liquid wobble |
+| Parameter | Default | Range | What it is |
+|---|---|---|---|
+| `ior` | `1.33` | `1`–`2.4` | Index of refraction — water's real value. `1` is air and bends nothing |
+| `thickness` | `86` | `0`–`200` px | Virtual slab thickness. Scales the displacement |
+| `bevel` | `90` | `1`–`300` px | Width of the refracting rim |
+| `bevelPower` | `1.8` | `1`–`8` | Bevel sharpness: 2 = circle, 4 = squircle |
+| `surface` | `0` | `0`–`1` | Height profile: 0 convex dome, 0.5 lip, 1 concave |
+| `splay` | `0.55` | `0`–`1` | 0 = bevelled sheet (flat centre), 1 = thick lens |
+| `dispersion` | `0.012` | `0`–`0.35` | Chromatic fringing at the edges |
+| `frost` | `0.05` | `0`–`1` | Surface roughness: 0 polished, 1 etched |
+| `specular` | `1.20` | `0`–`3` | Highlight strength |
+| `saturation` | `1.10` | `0`–`2` | Backdrop saturation multiplier |
+| `tint` | `0.02` | `0`–`1` | Tint strength, toward `tintColor` (default white) |
+| `radius` | `110` | `0`+ px | Corner radius — see note |
+| `motion` | `1.40` | `0`–`4` | Idle liquid wobble |
+
+The three ways to set any of them:
 
 ```js
-new LiquidGlass(el, { ior: 1.5, motion: 0 });   // override at construction
-glass.set({ frost: 0.2, specular: 0.8 });       // or at runtime
-glass.set('thickness', 60);
+new LiquidGlass(el, { ior: 1.5, motion: 0 });   // at construction
+glass.set({ frost: 0.2, specular: 0.8 });       // at runtime, several
+glass.set('thickness', 60);                     // at runtime, one
+
+registerProfile('card', { extends: 'water', thickness: 40 });
+new LiquidGlass(el, { profile: 'card' });       // as a reusable variant
 ```
+
+`splay`, `specular`, `tint` and `motion` need the WebGL tier; on the CSS
+fallbacks they are stored but inert. See [which tier you
+get](#understand-which-tier-you-get).
+
+**[Full parameter reference, with ranges and recipes →](src/lib/README.md)**
 
 **About `radius`:** the material adopts the element's own CSS
 `border-radius` whenever it has one, so the shape follows your stylesheet
@@ -279,7 +291,7 @@ npm run build:lib    # the publishable bundle
 
 ### Tests
 
-Five suites, all driven through headless Chromium with SwiftShader
+Six suites, all driven through headless Chromium with SwiftShader
 software rendering, so results hold without a GPU. They assert behaviour,
 not screenshots:
 
@@ -296,6 +308,11 @@ not screenshots:
   accessibility preserved; profiles resolve and override; geometry adopted
   from the host; `destroy()` leaves no trace; instances coexist; and
   toggling the material provably changes pixels.
+- **params** — the parameter contract: every parameter the README
+  documents as overridable provably moves pixels, by all three routes a
+  caller has (construction, `set()`, and a registered profile). Asserting
+  rendered output rather than `getParams()` is the point — a value that
+  never reaches the shader would pass a state check.
 
 The dev server must be running (`npm run dev`) before `npm test`.
 

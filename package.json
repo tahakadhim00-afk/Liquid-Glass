@@ -48,7 +48,7 @@
     "build": "vite build",
     "build:lib": "vite build --config vite.lib.config.js && node scripts/copy-types.mjs",
     "preview": "vite preview",
-    "test": "node test/orientation.test.mjs && node test/lens.test.mjs && node test/light.test.mjs && node test/frost.test.mjs && node test/library.test.mjs",
+    "test": "node test/orientation.test.mjs && node test/lens.test.mjs && node test/light.test.mjs && node test/frost.test.mjs && node test/library.test.mjs && node test/params.test.mjs",
     "prepublishOnly": "npm run build:lib"
   },
   "devDependencies": {

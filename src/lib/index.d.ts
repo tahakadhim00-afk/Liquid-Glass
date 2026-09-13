@@ -20,7 +20,10 @@ export interface GlassParams {
   bevelPower: number;
   /** Height profile: 0 convex, 0.5 lip (raised rim + dish), 1 concave. */
   surface: number;
-  /** 0 = bevelled sheet (flat centre), 1 = thick lens (whole face curves). */
+  /**
+   * 0 = bevelled sheet (flat centre), 1 = thick lens (whole face curves).
+   * WebGL tier only.
+   */
   splay: number;
 
   // --- optics --------------------------------------------------------
@@ -36,8 +39,10 @@ export interface GlassParams {
   saturation: number;
 
   // --- surface treatment ---------------------------------------------
+  /** Tint strength toward `tintColor`, 0..1. WebGL tier only. */
   tint: number;
   tintColor: RGB;
+  /** Highlight strength. 0 removes the glint. WebGL tier only. */
   specular: number;
 
   // --- light source (WebGL tier only) ---------------------------------
@@ -60,7 +65,10 @@ export interface GlassParams {
   lightAmbient: number;
 
   // --- motion / cost ---------------------------------------------------
-  /** Idle liquid wobble. Forced to 0 under prefers-reduced-motion. */
+  /**
+   * Idle liquid wobble. Forced to 0 under prefers-reduced-motion.
+   * WebGL tier only.
+   */
   motion: number;
   /** <0.5 uses a smaller blur kernel. */
   quality: number;
