@@ -270,24 +270,22 @@ whether the blur is 5px or 500px. DPR is capped at 2, and
 src/lib/      the published library
 src/core/     renderer, backdrop, tier fallbacks
 src/shaders/  the GLSL
-demo/         two demo pages (not published)
+demo/         playground + a harness the test suite loads (not published)
 test/         Playwright suites
 docs/         research notes
 ```
 
 ```bash
 npm install
-npm run dev          # demos at http://localhost:5173
+npm run dev          # playground at http://localhost:5173/playground.html
 npm test             # full suite, headless
 npm run build:lib    # the publishable bundle
 ```
 
-`npm run dev` serves two pages:
-
-- **`/`** — the library used the way a site would use it.
-- **`/playground.html`** — the shader with every parameter on a slider.
-  Drag the panel, drop in your own image. This is the tuning surface; the
-  library is the delivery surface.
+`npm run dev` serves `/playground.html` — the shader with every parameter
+on a slider. Drag the panel, drop in your own image. `/harness.html` is
+not a demo; it exists only so the test suite has a page to load the
+library through.
 
 ### Tests
 

@@ -4,11 +4,11 @@ import { resolve } from 'node:path';
  * Dev/demo config.
  *
  * The published library is built separately by vite.lib.config.js - this
- * one only serves and builds the two demo pages, so the demos can never
- * be mistaken for the package itself.
+ * one only serves and builds the pages under demo/, so they can never be
+ * mistaken for the package itself.
  *
- *   demo/index.html       the library in use, the way a site would use it
  *   demo/playground.html  the shader with every parameter on a slider
+ *   demo/harness.html     no UI - loads the library for the test suite
  */
 const root = resolve(process.cwd(), 'demo');
 
@@ -28,8 +28,8 @@ export default {
     emptyOutDir: true,
     rollupOptions: {
       input: {
-        index: resolve(root, 'index.html'),
         playground: resolve(root, 'playground.html'),
+        harness: resolve(root, 'harness.html'),
       },
     },
   },

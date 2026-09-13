@@ -25,7 +25,7 @@ const page = await browser.newPage({ viewport: { width: 900, height: 600 }, devi
 
 const errors = [];
 page.on('pageerror', e => errors.push(e.message));
-await page.goto('http://localhost:5173/', { waitUntil: 'networkidle' });
+await page.goto('http://localhost:5173/harness.html', { waitUntil: 'networkidle' });
 await page.waitForTimeout(1200);
 
 // Each documented parameter, with a value far enough from the default to

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Liquid Glass - test harness</title>
+<style>
+  /* Detail behind the panels: refraction is only visible over texture, and
+     library.test.mjs's "material visibly changes the backdrop" check would
+     pass vacuously over a flat colour. */
+  body {
+    margin: 0;
+    min-height: 150vh;
+    background:
+      repeating-linear-gradient(45deg, #fff3 0 14px, transparent 14px 28px),
+      linear-gradient(135deg, #1a1040, #0a2540 60%, #200a30);
+    color: #fff;
+    font: 15px system-ui, sans-serif;
+  }
+  .card {
+    position: relative;
+    width: 280px;
+    height: 180px;
+    margin: 24px;
+    border-radius: 26px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+  .bar { position: sticky; top: 24px; margin: 24px; padding: 12px 20px; width: 300px; border-radius: 999px; }
+</style>
+</head>
+<body>
+  <!--
+    Not a demo - there is no demo page in this repo. This exists only so
+    the Playwright suites have a real page to load the library through the
+    dev server (a module import needs a served origin, not a bare file://)
+    and drive it via window.__lg, the same way an app would import the
+    package. The cards below give the "non-intrusive attachment",
+    "coexistence" and "visibly changes pixels" checks in
+    library.test.mjs real markup and a real backdrop to test against.
+  -->
+  <div class="card" data-glass="water">
+    <div class="tagline">defaults</div>
+    <h2>Water drop</h2>
+    <p>The library's own default profile.</p>
+  </div>
+  <div class="card" data-glass="brand">
+    <div class="tagline">registerProfile</div>
+    <h2>Brand tint</h2>
+    <p>A registered variant.</p>
+  </div>
+  <div class="card" data-glass="water">
+    <div class="tagline">overrides</div>
+    <h2>Third</h2>
+    <p>A second water-drop instance.</p>
+  </div>
+  <div class="card" data-glass="water">
+    <div class="tagline">overrides</div>
+    <h2>Fourth</h2>
+    <p>A third water-drop instance.</p>
+  </div>
+  <div class="bar" id="bar"></div>
+
+  <script type="module">
+    import { LiquidGlass, registerProfile, resolveProfile, applyIntensity, pickTier }
+      from '../src/lib/index.js';
+
+    registerProfile('brand', { extends: 'water', tint: 0.10, tintColor: [1.0, 0.86, 0.72] });
+
+    const instances = [...document.querySelectorAll('[data-glass]')]
+      .map((el) => new LiquidGlass(el, { profile: el.dataset.glass }));
+    new LiquidGlass(document.getElementById('bar'), { motion: 0.3, thickness: 40 });
+
+    window.__glass = instances;
+    window.__lg = { LiquidGlass, registerProfile, resolveProfile, applyIntensity, pickTier };
+  </script>
+</body>
+</html>
