@@ -262,7 +262,17 @@ void main() {
 
   /* ---- 2. height field (bevel + lens) ------------------------------ */
   float bevel = max(uBevel, 1.0);
-  float t = clamp(-d / bevel, 0.0, 1.0);   // 0 at rim, 1 past the bevel
+  // 0 at rim, 1 past the bevel.
+  //
+  // The clamp is only C0: the profile still has real slope when it reaches
+  // t = 1, and truncating it there snaps the surface flat in one pixel. On
+  // a wide bevel the profile has room to flatten on its own before the cut,
+  // so nothing shows - but a narrow one is compressed enough to still be
+  // climbing when it hits the clamp, and the break draws a ring at exactly
+  // `bevel` px in from the contour. Easing the last stretch of the ramp
+  // lands on the flat top with matching slope instead of cutting to it.
+  float tRaw = max(-d / bevel, 0.0);
+  float t = tRaw < 1.0 ? smootherstep(tRaw) : 1.0;
   float h = surfaceHeight(t, uBevelPower, uProfile);
 
   // A pure bevel is flat on top, so its interior refracts nothing: the
@@ -289,12 +299,56 @@ void main() {
   h = mix(h, lensH, uSplay);
 
   /* ---- 3. normal --------------------------------------------------- */
-  float e = 1.0;
-  vec2 grad = vec2(
-    sdRoundRect(local + vec2(e, 0.0), half_, radius) - sdRoundRect(local - vec2(e, 0.0), half_, radius),
-    sdRoundRect(local + vec2(0.0, e), half_, radius) - sdRoundRect(local - vec2(0.0, e), half_, radius)
-  ) / (2.0 * e);
-  grad = normalize(grad + vec2(1e-6));
+  // Outward direction of the shape, used as the bevel's fall line.
+  //
+  // Central-differencing the SDF looks like the obvious way to get this,
+  // but the rounded-rect SDF is only C0 along the diagonals running in
+  // from each corner: that is where the nearest feature switches from a
+  // vertical edge to a horizontal one, and the gradient jumps from (1,0)
+  // to (0,1) across it. The jump lands in the normal, and from there in
+  // the refraction and the specular, so a hard diagonal seam is drawn
+  // from every corner. A narrow bevel hides it - `t` saturates before the
+  // diagonals are reached, so the surface is already flat there - but
+  // widening the bevel pushes the sloped region inward over them and the
+  // seams appear.
+  //
+  // So build the direction analytically instead, blending the two edge
+  // candidates rather than switching between them. `w` is the per-axis
+  // proximity to that axis' edge; normalising it gives x and y weights
+  // that cross over smoothly on the diagonal instead of swapping.
+  vec2 ax = abs(local);
+  vec2 innerBox = max(half_ - radius, vec2(0.0));
+  vec2 cornerV = max(ax - innerBox, 0.0);
+
+  // Signed proximity to each axis' edge. Their difference is what the SDF
+  // switches on, so blending against it removes exactly that switch.
+  vec2 w = ax - innerBox;
+  // Softness must span the whole region the surface is still sloped in,
+  // since that is exactly where a direction discontinuity could show. The
+  // bevel sets that width, but the corner radius also rounds the contour
+  // over its own span, so take whichever reaches further in.
+  float soft = max(max(bevel, radius) * 0.75, 1.0);
+  // Weights that cross over smoothly on the diagonal instead of swapping.
+  // Derived from one difference, so they sum to 1 and stay continuous.
+  float sx = smoothstep(-soft, soft, w.x - w.y);
+  vec2 edgeDir = normalize(vec2(sx, 1.0 - sx) * sign(local + vec2(1e-6)) + vec2(1e-6));
+
+  // Inside a corner arc the true outward direction is radial from that
+  // corner's centre. Hand over to it by how deep into the arc we are.
+  //
+  // The handover weight has to reach zero exactly where cornerV does, or
+  // it introduces its own discontinuity in place of the one being removed:
+  // cornerV is a max(...,0) clamp, so gating on `cornerV > 0` and then
+  // ramping over an unrelated span makes the blend switch on abruptly at
+  // the inner box - which is precisely the seam that survived at narrow
+  // bevels. Ramping the clamped value itself is continuous by construction.
+  vec2 arcRamp = clamp(cornerV / max(radius, 1.0), 0.0, 1.0);
+  float inArc = min(arcRamp.x, arcRamp.y);
+  inArc = smootherstep(inArc);
+
+  vec2 arcDir = normalize(cornerV * sign(local + vec2(1e-6)) + vec2(1e-6));
+  vec2 gradMix = mix(edgeDir, arcDir, inArc);
+  vec2 grad = normalize(gradMix + vec2(1e-6));
 
   // Slope of the bezel along the outward direction. This is the article's
   // central-difference derivative, in the profile's own [0,1] parameter:
@@ -326,8 +380,21 @@ void main() {
   // keeps the normal consistent with the blended height field.
   // Gradient of rN = length(local/half_), so it matches the height field
   // above on non-square panels rather than pointing at the geometric centre.
-  vec2 radial = normalize(q / max(half_, vec2(1.0)) + vec2(1e-6));
-  vec2 dir = normalize(mix(grad, radial, uSplay) + vec2(1e-6));
+  // q is ALREADY local/half_; dividing by half_ a second time squared the
+  // aspect correction, which swung the direction hard toward the short axis
+  // on a wide panel and made it disagree with `grad` - the disagreement then
+  // drew its own crease once uSplay mixed the two.
+  vec2 radial = normalize(q + vec2(1e-6));
+
+  // Blend the DIRECTIONS by normalised interpolation, not by mixing raw
+  // vectors: mix() of two unit vectors shortens as they diverge, and where
+  // they point opposite ways it passes through ~zero, so normalize() of the
+  // result flips sign across that point. Slerping via the mixed vector with
+  // a magnitude floor keeps the turn monotonic instead.
+  vec2 mixed = mix(grad, radial, uSplay);
+  vec2 dir = length(mixed) > 1e-3
+    ? normalize(mixed)
+    : normalize(mix(grad, radial, uSplay < 0.5 ? 0.0 : 1.0) + vec2(1e-6));
 
   float slope = mix(bevelSlope, lensSlope, uSplay);
 
@@ -620,10 +687,20 @@ void main() {
   float ew = max(uEdgeWidth, 0.5);
   float edgeBand = smoothstep(0.0, ew * 0.6, edgePx)
                  * (1.0 - smoothstep(ew, ew * 2.2, edgePx));
-  // The far side keeps a faint bounce (~1/6 of the lit line): the edge
-  // is still a discontinuity in the surface, so it never vanishes.
-  float edgeGlow = mix(0.16, 1.0, lit) * attenuation;
-  float edgeMix = clamp(edgeBand * edgeGlow * uEdgeLine * cornerGain * 0.85, 0.0, 1.0);
+  // The far side keeps a real bounce, not a token one. An edge is a
+  // discontinuity in the surface all the way round, so it catches light
+  // from the environment even where it faces away from the key: on a real
+  // panel the line reads as a continuous thread that merely dims on the
+  // shadow side, never as a highlight that stops partway round.
+  //
+  // The floor was low enough (0.16) that `attenuation` and `cornerGain`
+  // could drive the far side to nothing, leaving the rim visibly broken -
+  // a lit arc on the key side and bare contour opposite. Keeping the
+  // ambient term clear of those two factors is what closes the loop.
+  float edgeAmbient = 0.45;
+  float edgeGlow = edgeAmbient
+                 + (1.0 - edgeAmbient) * lit * attenuation * cornerGain;
+  float edgeMix = clamp(edgeBand * edgeGlow * uEdgeLine * 0.85, 0.0, 1.0);
   col = mix(col, uLightColor, edgeMix);
 
   fragColor = vec4(col, inside);
